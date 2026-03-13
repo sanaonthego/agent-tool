@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trip Cost Calculator — Sana On The Go</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --green:#2d6a4f; --green-lt:#52b788; --green-dk:#1a3d2b; --green-mid:#3d8b62;
+      --gold:#c9a84c; --gold-lt:#e8c97a; --gold-dk:#a07830;
+      --bg:#f6f3ee; --bg2:#eef0eb; --text:#1c1c1c; --muted:#64705e;
+      --card:#ffffff; --radius:12px; --shadow:0 4px 24px rgba(26,61,43,0.10); --border:#d8e0d4;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+    header{background:var(--green-dk);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,0.2);position:sticky;top:0;z-index:100}
+    .logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:.3px}
+    .logo span{color:var(--gold-lt)}
+    .header-badge{font-size:.72rem;background:rgba(201,168,76,.2);color:var(--gold-lt);border:1px solid rgba(201,168,76,.35);padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+    .main-wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px}
+    .page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,4vw,2.6rem);color:var(--green-dk);margin-bottom:6px}
+    .page-sub{color:var(--muted);font-size:.93rem;margin-bottom:32px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:20px;box-shadow:var(--shadow)}
+    .card-title{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--green);margin-bottom:4px;display:flex;align-items:center;gap:10px}
+    .card-sub{color:var(--muted);font-size:.82rem;margin-bottom:20px}
+    .form-row{display:grid;gap:16px;margin-bottom:4px}
+    .form-row.two{grid-template-columns:1fr 1fr}
+    .form-row.three{grid-template-columns:1fr 1fr 1fr}
+    .field{display:flex;flex-direction:column;gap:5px}
+    label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+    input[type="number"],input[type="text"],select{border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.93rem;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);transition:border-color .2s,box-shadow .2s;width:100%}
+    input[type="number"]:focus,input[type="text"]:focus,select:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(82,183,136,.15);background:#fff}
+    input[type="number"]{-moz-appearance:textfield}
+    input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
+    /* ── DAYS TABLE ── */
+    .days-table-wrap{overflow-x:auto}
+    .days-table{width:100%;border-collapse:collapse;font-size:.88rem}
+    .days-table th{background:var(--green-dk);color:rgba(255,255,255,.88);padding:10px 14px;text-align:left;font-size:.75rem;letter-spacing:.5px;font-weight:600;white-space:nowrap}
+    .days-table th:first-child{border-radius:8px 0 0 0}
+    .days-table th:last-child{border-radius:0 8px 0 0}
+    .days-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+    .days-table tr:last-child td{border-bottom:none}
+    .days-table tr:nth-child(even) td{background:#f8f6f2}
+    .days-table input{width:100%;min-width:80px;padding:7px 10px;font-size:.85rem;border:1.5px solid var(--border);border-radius:7px;background:#fafaf8;color:var(--text);font-family:'DM Sans',sans-serif}
+    .days-table input:focus{outline:none;border-color:var(--green-mid);background:#fff;box-shadow:0 0 0 2px rgba(82,183,136,.15)}
+    .day-label{font-weight:600;color:var(--green-dk);font-size:.82rem;white-space:nowrap}
+    /* ── CHILDREN ── */
+    .children-info-box{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px 16px;font-size:.83rem;color:var(--muted);margin-bottom:16px;line-height:1.9}
+    .children-info-box strong{color:var(--green-dk)}
+    .child-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;background:#fafaf8;border:1px solid var(--border);border-radius:9px;padding:12px 14px}
+    .age-badge{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:6px}
+    .age-free{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+    .age-half{background:#fff3e0;color:#e65100;border:1px solid #ffcc80}
+    .age-full{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+    /* ── CAR BLOCKS ── */
+    .car-day-block{border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:12px;background:#fafaf8}
+    .car-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .car-day-title{font-weight:700;font-size:.85rem;color:var(--green-dk)}
+    .car-entry{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px;align-items:flex-end;margin-bottom:8px}
+    /* ── PROPERTIES ── */
+    .region-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .rtab{padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);transition:all .2s}
+    .rtab:hover,.rtab.active{background:var(--green);color:#fff;border-color:var(--green)}
+    .prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+    .prop-card{border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .2s;background:#fafaf8;position:relative}
+    .prop-card:hover{border-color:var(--green-mid);background:#f0f7f3}
+    .prop-card.selected{border-color:var(--green);background:#eaf5ee;box-shadow:0 0 0 3px rgba(45,106,79,.12)}
+    .prop-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;color:var(--green);font-weight:700;font-size:.9rem}
+    .prop-name{font-weight:600;font-size:.9rem;color:var(--green-dk);margin-bottom:2px}
+    .prop-location{font-size:.75rem;color:var(--muted);margin-bottom:8px}
+    .prop-rate{font-size:.78rem;color:var(--muted)}
+    .prop-rate strong{color:var(--green);font-size:.88rem}
+    .prop-region-label{font-size:.68rem;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+    /* ── SUMMARY ── */
+    .summary-box{background:linear-gradient(135deg,var(--green-dk) 0%,var(--green) 100%);border-radius:var(--radius);padding:28px 32px;color:#fff;margin-bottom:20px;box-shadow:0 8px 32px rgba(26,61,43,.25)}
+    .summary-box h2{font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:20px;color:#fff}
+    .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+    .sum-item{background:rgba(255,255,255,.1);border-radius:9px;padding:12px 16px}
+    .sum-item .label{font-size:.72rem;color:rgba(255,255,255,.64);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:4px}
+    .sum-item .value{font-size:1.05rem;font-weight:700;color:#fff}
+    .sum-total{background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.4);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+    .sum-total .label{font-size:.9rem;color:rgba(255,255,255,.84);font-weight:600}
+    .sum-total .big{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--gold-lt)}
+    /* ── BREAKDOWN ── */
+    .breakdown-table{width:100%;border-collapse:collapse;margin-top:8px}
+    .breakdown-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:.88rem}
+    .breakdown-table tr:last-child td{border-bottom:none}
+    .breakdown-table .lbl{color:var(--muted)}
+    .breakdown-table .amt{text-align:right;font-weight:600}
+    .breakdown-table .subtotal td{background:var(--bg2)}
+    .breakdown-table .subtotal .lbl{color:var(--green-dk);font-weight:600}
+    /* ── BUTTONS ── */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+    .btn-primary{background:var(--green);color:#fff}
+    .btn-primary:hover{background:var(--green-dk);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,61,43,.3)}
+    .btn-gold{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dk) 100%);color:#fff}
+    .btn-gold:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 16px rgba(160,120,48,.35)}
+    .btn-outline{background:transparent;color:var(--green);border:1.5px solid var(--green)}
+    .btn-outline:hover{background:#eaf5ee}
+    .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
+    .btn-danger{background:transparent;color:#c0392b;border:1.5px solid #c0392b}
+    .btn-danger:hover{background:#fdf0ee}
+    .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+    .btn-lg{padding:15px 32px;font-size:1rem;border-radius:10px}
+    .markup-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:16px}
+    .markup-result{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 16px;font-size:.88rem}
+    .markup-result strong{color:var(--green);font-size:1rem}
+    .note{font-size:.78rem;color:var(--muted);margin-top:8px;font-style:italic}
+    @media(max-width:640px){
+      header{padding:14px 16px}
+      .main-wrap{padding:20px 12px 60px}
+      .card{padding:18px 16px}
+      .form-row.three{grid-template-columns:1fr 1fr}
+      .form-row.two{grid-template-columns:1fr}
+      .btn-lg{width:100%;justify-content:center}
+      .car-entry{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <span class="logo">Sana <span>On The Go</span></span>
+  <span class="header-badge">Agent Tool · Private</span>
+</header>
+
+<div class="main-wrap">
+  <h1 class="page-title">Trip Cost Calculator</h1>
+  <p class="page-sub">Internal tool — calculate, review and export trip costing PDFs with full breakdowns.</p>
+
+  <!-- CARD 1: TRIP BASICS -->
+  <div class="card">
+    <div class="card-title">📋 Trip Basics</div>
+    <div class="card-sub">Set the trip name, duration and group composition.</div>
+    <div class="form-row two">
+      <div class="field"><label>Trip / Destination Name</label><input type="text" id="tripName" placeholder="e.g. Sikkim 4N/5D"></div>
+      <div class="field"><label>Client Name (optional)</label><input type="text" id="clientName" placeholder="e.g. Mr. Sharma & Family"></div>
+    </div>
+    <div class="form-row three" style="margin-top:14px">
+      <div class="field"><label>No. of Nights</label><input type="number" id="numNights" value="3" min="1" max="20" oninput="rebuildAll()"></div>
+      <div class="field"><label>No. of Adults</label><input type="number" id="numAdults" value="4" min="0" max="100" oninput="recalculate()"></div>
+      <div class="field"><label>No. of Rooms</label><input type="number" id="numRooms" value="2" min="1" max="50" oninput="recalculate()"></div>
+    </div>
+  </div>
+
+  <!-- CARD 2: CHILDREN -->
+  <div class="card">
+    <div class="card-title">👶 Children (Age-based Lodging Pricing)</div>
+    <div class="card-sub">Hotel/homestay charges depend on child age. Add each child separately.</div>
+    <div class="children-info-box">
+      <strong>Lodging Age Rules:</strong><br>
+      🟢 <strong>Below 3 years</strong> — No hotel/lodging charge (complimentary)<br>
+      🟡 <strong>3 to 6 years</strong> — Half the per-person lodging/combined rate<br>
+      🔵 <strong>Above 6 years</strong> — Full per-person rate (same as adult for hotel)
+    </div>
+    <div id="childrenList"></div>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="addChild()">+ Add Child</button>
+    <p class="note">Food cost for children: enter adult food rates in the Food & Lodging table — adjust manually if children eat differently.</p>
+  </div>
+
+  <!-- CARD 3: FOOD & LODGING -->
+  <div class="card">
+    <div class="card-title">🍽️ Food & Lodging — Per Day Breakdown</div>
+    <div class="card-sub">Enter per-adult rates. Child lodging is auto-calculated based on age above. Days = Nights + 1.</div>
+    <div class="days-table-wrap">
+      <table class="days-table">
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Food Only (₹/adult)</th>
+            <th>Lodging Only (₹/adult)</th>
+            <th>Food+Lodging Combined (₹/adult)</th>
+            <th>Use Combined?</th>
+          </tr>
+        </thead>
+        <tbody id="daysTableBody"></tbody>
+      </table>
+    </div>
+    <p class="note">Check "Use Combined?" when a property bundles food & lodging. Child lodging is auto-applied as a fraction of the lodging/combined rate based on age rules.</p>
+  </div>
+
+  <!-- CARD 4: TRANSPORT (MULTI-CAR) -->
+  <div class="card">
+    <div class="card-title">🚗 Transport — Per Day (Multiple Vehicles)</div>
+    <div class="card-sub">Add one or more vehicles per day. E.g. one Bolero + one small car. Each vehicle has its own cost and route note.</div>
+    <div id="carDayBlocks"></div>
+  </div>
+
+  <!-- CARD 5: PROPERTIES -->
+  <div class="card">
+    <div class="card-title">🏨 Property Selector (B2B Rates)</div>
+    <div class="card-sub">Select properties used in this trip. B2B cost is added automatically. Skip if you've filled lodging manually above.</div>
+    <!--
+      ══ HOW TO EDIT PROPERTY B2B RATES ══
+      Scroll down to the PROPERTY_DATA array in the script section.
+      Change the b2bRate value for each property (cost per room per night, in ₹).
+      To add a new property, copy any existing line and change name/location/region/b2bRate.
+    -->
+    <div class="region-tabs" id="regionTabs"></div>
+    <div class="prop-grid" id="propGrid"></div>
+  </div>
+
+  <!-- CARD 6: EXTRAS -->
+  <div class="card">
+    <div class="card-title">➕ Extras & Miscellaneous</div>
+    <div class="card-sub">Permits, entry fees, guide charges, tips, etc.</div>
+    <div id="extrasList"></div>
+    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addExtra()">+ Add Extra Item</button>
+  </div>
+
+  <!-- CARD 7: MARKUP -->
+  <div class="card">
+    <div class="card-title">📈 Markup & Profit</div>
+    <div class="card-sub">Apply a percentage markup over total base cost to get the selling price.</div>
+    <div class="markup-row">
+      <div class="field" style="min-width:160px">
+        <label>Markup %</label>
+        <input type="number" id="markupPct" value="15" min="0" max="500" oninput="recalculate()">
+      </div>
+      <div class="markup-result" id="markupResult">Selling Price: <strong>—</strong></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-box">
+    <h2>Cost Summary</h2>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="sum-total">
+      <div>
+        <div class="label">Base Cost (Total)</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.6)" id="perPersonCost"></div>
+      </div>
+      <div class="big" id="grandTotal">₹0</div>
+    </div>
+  </div>
+
+  <!-- DETAILED BREAKDOWN -->
+  <div class="card">
+    <div class="card-title">📊 Detailed Breakdown</div>
+    <table class="breakdown-table" id="breakdownTable"></table>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="btn-row">
+    <button class="btn btn-gold btn-lg" onclick="generatePDF()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Export PDF Quote
+    </button>
+    <button class="btn btn-primary btn-lg" onclick="recalculate()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Recalculate
+    </button>
+    <button class="btn btn-outline btn-lg" onclick="resetAll()">Reset All</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  PROPERTY DATA — EDIT B2B RATES HERE
+//  b2bRate = your net cost per room per night in ₹ (B2B rate)
+//  To add a property: copy a line, change name/location/region/b2bRate
+// ══════════════════════════════════════════════════════════════════
+const PROPERTY_DATA = [
+  // ── DARJEELING ──
+  { name:"Dekeling Hotel",          location:"Darjeeling",  region:"Darjeeling", b2bRate:2500 },
+  { name:"Mayfair Darjeeling",      location:"Darjeeling",  region:"Darjeeling", b2bRate:6500 },
+  { name:"Cedar Inn",               location:"Darjeeling",  region:"Darjeeling", b2bRate:3200 },
+  { name:"Elgin Hotel",             location:"Darjeeling",  region:"Darjeeling", b2bRate:5800 },
+  { name:"Cochrane Place",          location:"Darjeeling",  region:"Darjeeling", b2bRate:4200 },
+  { name:"Property 6 (Darjeeling)", location:"Darjeeling",  region:"Darjeeling", b2bRate:0    },
+  // ── KALIMPONG ──
+  { name:"Himalayan Hotel",         location:"Kalimpong",   region:"Kalimpong",  b2bRate:3500 },
+  { name:"Silver Oaks",             location:"Kalimpong",   region:"Kalimpong",  b2bRate:4200 },
+  { name:"Kalimpong Park Hotel",    location:"Kalimpong",   region:"Kalimpong",  b2bRate:2800 },
+  { name:"Property 4 (Kalimpong)",  location:"Kalimpong",   region:"Kalimpong",  b2bRate:0    },
+  // ── SIKKIM ──
+  { name:"Mayfair Gangtok",         location:"Gangtok",     region:"Sikkim",     b2bRate:7000 },
+  { name:"Norkhill Hotel",          location:"Gangtok",     region:"Sikkim",     b2bRate:4500 },
+  { name:"Modern Central Hotel",    location:"Gangtok",     region:"Sikkim",     b2bRate:2600 },
+  { name:"The Elgin Mt Pandim",     location:"Pelling",     region:"Sikkim",     b2bRate:6000 },
+  { name:"Kabur Resort",            location:"Ravangla",    region:"Sikkim",     b2bRate:3200 },
+  { name:"Property 6 (Sikkim)",     location:"Sikkim",      region:"Sikkim",     b2bRate:0    },
+  // ── DOOARS / OFFBEAT ──
+  { name:"Jungle Camp Lataguri",    location:"Lataguri",    region:"Dooars",     b2bRate:3800 },
+  { name:"Gorumara Forest Stay",    location:"Gorumara",    region:"Dooars",     b2bRate:2900 },
+  { name:"Chalsa River Camp",       location:"Chalsa",      region:"Dooars",     b2bRate:2200 },
+  { name:"Bindu Eco Retreat",       location:"Bindu",       region:"Dooars",     b2bRate:3100 },
+  { name:"Property 5 (Dooars)",     location:"Dooars",      region:"Dooars",     b2bRate:0    },
+  { name:"Property 6 (Dooars)",     location:"Dooars",      region:"Dooars",     b2bRate:0    },
+];
+// ══════════════════════════════════════════════════════════════════
+
+let selectedProperties = new Set();
+let extraCount = 0;
+let childCount = 0;
+let carEntryCount = {};   // { day: highestEntryId }
+let carEntryVisible = {}; // tracks which entry ids still exist per day
+
+window.onload = function() {
+  buildRegionTabs();
+  buildPropGrid('All');
+  rebuildAll();
+};
+
+function rebuildAll() {
+  rebuildDaysTable();
+  rebuildCarBlocks();
+  recalculate();
+}
+
+// ─── CHILDREN ───────────────────────────────────────────────────
+function addChild() {
+  childCount++;
+  const id = childCount;
+  const div = document.createElement('div');
+  div.id = `child_${id}`;
+  div.className = 'child-row';
+  div.innerHTML = `
+    <div class="field" style="min-width:140px">
+      <label>Child Name / Label</label>
+      <input type="text" id="childName_${id}" value="Child ${id}" placeholder="e.g. Child 1">
+    </div>
+    <div class="field" style="min-width:90px">
+      <label>Age (years)</label>
+      <input type="number" id="childAge_${id}" value="5" min="0" max="17" oninput="updateChildBadge(${id});recalculate()">
+    </div>
+    <div style="padding-bottom:8px" id="childBadge_${id}"></div>
+    <button class="btn btn-sm btn-danger" style="margin-bottom:8px" onclick="removeChild(${id})">✕ Remove</button>`;
+  document.getElementById('childrenList').appendChild(div);
+  updateChildBadge(id);
+  recalculate();
+}
+
+function updateChildBadge(id) {
+  const age = parseInt(document.getElementById(`childAge_${id}`)?.value) || 0;
+  const b = document.getElementById(`childBadge_${id}`);
+  if (!b) return;
+  if (age < 3)       b.innerHTML = `<span class="age-badge age-free">Under 3 yrs — Free lodging</span>`;
+  else if (age <= 6) b.innerHTML = `<span class="age-badge age-half">Age 3–6 — Half lodging rate</span>`;
+  else               b.innerHTML = `<span class="age-badge age-full">Age 7+ — Full lodging rate</span>`;
+}
+
+function removeChild(id) {
+  document.getElementById(`child_${id}`)?.remove();
+  recalculate();
+}
+
+function getChildMult(id) {
+  const age = parseInt(document.getElementById(`childAge_${id}`)?.value) || 0;
+  if (age < 3) return 0;
+  if (age <= 6) return 0.5;
+  return 1;
+}
+
+// ─── DAYS TABLE ─────────────────────────────────────────────────
+function rebuildDaysTable() {
+  const nights = parseInt(document.getElementById('numNights').value) || 3;
+  const days = nights + 1;
+  let html = '';
+  for (let d = 1; d <= days; d++) {
+    const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
+    html += `<tr>
+      <td class="day-label">${lbl}</td>
+      <td><input type="number" id="food_${d}" value="0" min="0" oninput="recalculate()"></td>
+      <td><input type="number" id="lodging_${d}" value="0" min="0" oninput="recalculate()"></td>
+      <td><input type="number" id="combined_${d}" value="0" min="0" oninput="recalculate()"></td>
+      <td style="text-align:center"><input type="checkbox" id="useCombined_${d}" onchange="recalculate()" style="width:auto;transform:scale(1.4)"></td>
+    </tr>`;
+  }
+  document.getElementById('daysTableBody').innerHTML = html;
+}
+
+// ─── CAR BLOCKS (MULTI-VEHICLE PER DAY) ─────────────────────────
+function rebuildCarBlocks() {
+  const nights = parseInt(document.getElementById('numNights').value) || 3;
+  const days = nights + 1;
+  const container = document.getElementById('carDayBlocks');
+  container.innerHTML = '';
+  carEntryCount  = {};
+  carEntryVisible = {};
+  for (let d = 1; d <= days; d++) {
+    carEntryCount[d] = 1;
+    carEntryVisible[d] = new Set([1]);
+    const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
+    const block = document.createElement('div');
+    block.className = 'car-day-block';
+    block.id = `carBlock_${d}`;
+    block.innerHTML = `
+      <div class="car-day-header">
+        <span class="car-day-title">🚗 ${lbl}</span>
+        <button class="btn btn-sm btn-outline" onclick="addCarEntry(${d})">+ Add Vehicle</button>
+      </div>
+      <div id="carEntries_${d}"></div>`;
+    container.appendChild(block);
+    appendCarEntry(d, 1);
+  }
+}
+
+function appendCarEntry(day, entryId) {
+  const container = document.getElementById(`carEntries_${day}`);
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = 'car-entry';
+  div.id = `carEntry_${day}_${entryId}`;
+  const removeBtn = entryId > 1
+    ? `<button class="btn btn-sm btn-danger" onclick="removeCarEntry(${day},${entryId})">✕</button>`
+    : `<div></div>`;
+  div.innerHTML = `
+    <div class="field">
+      <label>Vehicle Type</label>
+      <input type="text" id="carType_${day}_${entryId}" placeholder="e.g. Bolero, Alto">
+    </div>
+    <div class="field">
+      <label>Cost (₹)</label>
+      <input type="number" id="carCost_${day}_${entryId}" value="0" min="0" oninput="recalculate()">
+    </div>
+    <div class="field">
+      <label>Route / Note</label>
+      <input type="text" id="carNote_${day}_${entryId}" placeholder="e.g. NJP to Gangtok">
+    </div>
+    ${removeBtn}`;
+  container.appendChild(div);
+}
+
+function addCarEntry(day) {
+  carEntryCount[day] = (carEntryCount[day] || 1) + 1;
+  const newId = carEntryCount[day];
+  carEntryVisible[day].add(newId);
+  appendCarEntry(day, newId);
+  recalculate();
+}
+
+function removeCarEntry(day, entryId) {
+  document.getElementById(`carEntry_${day}_${entryId}`)?.remove();
+  carEntryVisible[day]?.delete(entryId);
+  recalculate();
+}
+
+// ─── PROPERTIES ─────────────────────────────────────────────────
+function buildRegionTabs() {
+  const regions = ['All', ...new Set(PROPERTY_DATA.map(p => p.region))];
+  document.getElementById('regionTabs').innerHTML = regions.map(r =>
+    `<button class="rtab ${r==='All'?'active':''}" onclick="filterRegion(this,'${r}')">${r}</button>`
+  ).join('');
+}
+
+function filterRegion(el, region) {
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  buildPropGrid(region);
+}
+
+function buildPropGrid(region) {
+  const list = region === 'All' ? PROPERTY_DATA : PROPERTY_DATA.filter(p => p.region === region);
+  document.getElementById('propGrid').innerHTML = list.map(p => {
+    const idx = PROPERTY_DATA.indexOf(p);
+    const sel = selectedProperties.has(idx);
+    return `<div class="prop-card ${sel?'selected':''}" onclick="toggleProp(${idx},this)">
+      <div class="prop-region-label">${p.region}</div>
+      <div class="prop-name">${p.name}</div>
+      <div class="prop-location">📍 ${p.location}</div>
+      <div class="prop-rate">B2B: <strong>${p.b2bRate > 0 ? 'Rs.'+p.b2bRate.toLocaleString('en-IN')+'/room/night' : 'Rate not set'}</strong></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <label style="font-size:.72rem;color:var(--muted);white-space:nowrap">Nights used:</label>
+        <input type="number" id="propNights_${idx}" value="1" min="1" max="20"
+          style="width:60px;font-size:.82rem;padding:4px 7px"
+          onclick="event.stopPropagation()" oninput="recalculate()">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleProp(idx, el) {
+  if (selectedProperties.has(idx)) { selectedProperties.delete(idx); el.classList.remove('selected'); }
+  else { selectedProperties.add(idx); el.classList.add('selected'); }
+  recalculate();
+}
+
+// ─── EXTRAS ─────────────────────────────────────────────────────
+function addExtra() {
+  extraCount++;
+  const id = extraCount;
+  const div = document.createElement('div');
+  div.id = `extra_${id}`;
+  div.style.cssText = 'display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap';
+  div.innerHTML = `
+    <div class="field" style="flex:2;min-width:180px"><label>Description</label><input type="text" id="extraDesc_${id}" placeholder="e.g. Nathu La Permit"></div>
+    <div class="field" style="flex:1;min-width:120px"><label>Amount (Rs.)</label><input type="number" id="extraAmt_${id}" value="0" min="0" oninput="recalculate()"></div>
+    <button class="btn btn-sm btn-danger" style="margin-bottom:2px" onclick="removeExtra(${id})">✕</button>`;
+  document.getElementById('extrasList').appendChild(div);
+}
+
+function removeExtra(id) {
+  document.getElementById(`extra_${id}`)?.remove();
+  recalculate();
+}
+
+// ─── MAIN CALCULATE ─────────────────────────────────────────────
+function recalculate() {
+  const nights = parseInt(document.getElementById('numNights').value) || 3;
+  const days   = nights + 1;
+  const adults = parseInt(document.getElementById('numAdults').value) || 0;
+  const rooms  = parseInt(document.getElementById('numRooms').value) || 1;
+  const markupPct = parseFloat(document.getElementById('markupPct').value) || 0;
+
+  // Collect children
+  const children = [];
+  for (let i = 1; i <= childCount; i++) {
+    if (!document.getElementById(`child_${i}`)) continue;
+    const age  = parseInt(document.getElementById(`childAge_${i}`)?.value) || 0;
+    const name = document.getElementById(`childName_${i}`)?.value || `Child ${i}`;
+    const mult = getChildMult(i);
+    children.push({ id: i, name, age, mult });
+  }
+  const totalPersons = adults + children.length;
+
+  // Food & Lodging
+  let totalFood = 0, totalAdultLodging = 0, totalChildLodging = 0;
+  const dayRows = [];
+  for (let d = 1; d <= days; d++) {
+    const food     = parseFloat(document.getElementById(`food_${d}`)?.value) || 0;
+    const lodging  = parseFloat(document.getElementById(`lodging_${d}`)?.value) || 0;
+    const combined = parseFloat(document.getElementById(`combined_${d}`)?.value) || 0;
+    const useComb  = document.getElementById(`useCombined_${d}`)?.checked;
+
+    let dayFood = 0, dayAdultLodge = 0, dayChildLodge = 0;
+    if (useComb && combined > 0) {
+      dayFood = combined * adults;
+      // For children: apply their multiplier to the combined rate (lodging portion proxy)
+      children.forEach(c => { dayChildLodge += combined * c.mult; });
+    } else {
+      dayFood = food * adults;
+      dayAdultLodge = lodging * adults;
+      children.forEach(c => { dayChildLodge += lodging * c.mult; });
+    }
+    totalFood         += dayFood;
+    totalAdultLodging += dayAdultLodge;
+    totalChildLodging += dayChildLodge;
+    dayRows.push({ day: d, food: dayFood, lodging: dayAdultLodge,
+                   combined: useComb && combined > 0 ? combined * adults : 0,
+                   childLodging: dayChildLodge });
+  }
+
+  // Cars
+  let totalCar = 0;
+  const carRows = [];
+  for (let d = 1; d <= days; d++) {
+    const visSet = carEntryVisible[d] || new Set([1]);
+    let dayTotal = 0;
+    const vehicles = [];
+    visSet.forEach(e => {
+      const cost = parseFloat(document.getElementById(`carCost_${d}_${e}`)?.value) || 0;
+      const type = document.getElementById(`carType_${d}_${e}`)?.value || '';
+      const note = document.getElementById(`carNote_${d}_${e}`)?.value || '';
+      dayTotal += cost;
+      if (cost > 0 || type) vehicles.push({ type, cost, note });
+    });
+    totalCar += dayTotal;
+    if (vehicles.length > 0) carRows.push({ day: d, vehicles, dayTotal });
+  }
+
+  // Properties
+  let totalProp = 0;
+  const propRows = [];
+  selectedProperties.forEach(idx => {
+    const p = PROPERTY_DATA[idx];
+    const n = parseInt(document.getElementById(`propNights_${idx}`)?.value) || 1;
+    const cost = p.b2bRate * rooms * n;
+    totalProp += cost;
+    propRows.push({ name: p.name, rate: p.b2bRate, rooms, nights: n, total: cost });
+  });
+
+  // Extras
+  let totalExtras = 0;
+  const extraRows = [];
+  for (let i = 1; i <= extraCount; i++) {
+    if (!document.getElementById(`extra_${i}`)) continue;
+    const desc = document.getElementById(`extraDesc_${i}`)?.value || 'Extra';
+    const amt  = parseFloat(document.getElementById(`extraAmt_${i}`)?.value) || 0;
+    totalExtras += amt;
+    extraRows.push({ desc, amt });
+  }
+
+  const grandTotal   = totalFood + totalAdultLodging + totalChildLodging + totalCar + totalProp + totalExtras;
+  const sellingPrice = grandTotal * (1 + markupPct / 100);
+  const perPerson    = totalPersons > 0 ? grandTotal / totalPersons : 0;
+
+  // Summary
+  document.getElementById('summaryGrid').innerHTML = [
+    { label:'Food (Adults)',       value: fmt(totalFood) },
+    { label:'Lodging (Adults)',    value: fmt(totalAdultLodging) },
+    { label:'Children Lodging',   value: fmt(totalChildLodging) },
+    { label:'Transport',          value: fmt(totalCar) },
+    { label:'Properties (B2B)',   value: fmt(totalProp) },
+    { label:'Extras',             value: fmt(totalExtras) },
+    { label:`Markup (${markupPct}%)`, value: fmt(sellingPrice - grandTotal) },
+  ].map(x => `<div class="sum-item"><div class="label">${x.label}</div><div class="value">${x.value}</div></div>`).join('');
+
+  document.getElementById('grandTotal').textContent = fmt(grandTotal);
+  document.getElementById('perPersonCost').textContent =
+    `${adults} adult${adults!==1?'s':''} + ${children.length} child${children.length!==1?'ren':''} | ≈ ${fmt(perPerson)} / person`;
+  document.getElementById('markupResult').innerHTML =
+    `Selling Price: <strong>${fmt(sellingPrice)}</strong> &nbsp;|&nbsp; Profit: <strong style="color:var(--gold-dk)">${fmt(sellingPrice - grandTotal)}</strong>`;
+
+  buildBreakdown(dayRows, carRows, propRows, extraRows, children, adults,
+    totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
+    grandTotal, sellingPrice, markupPct);
+
+  window._calcData = {
+    nights, days, adults, children, rooms, markupPct, totalPersons,
+    totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
+    grandTotal, sellingPrice, perPerson, dayRows, carRows, propRows, extraRows
+  };
+}
+
+// ─── BREAKDOWN TABLE ────────────────────────────────────────────
+function buildBreakdown(dayRows, carRows, propRows, extraRows, children, adults,
+  totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
+  grandTotal, sellingPrice, markupPct) {
+
+  const tbl = document.getElementById('breakdownTable');
+  const row = (lbl, amt, cls='') =>
+    `<tr class="${cls}"><td class="lbl">${lbl}</td><td class="amt">${amt===''?'':fmt(amt)}</td></tr>`;
+  const sec = t =>
+    `<tr class="subtotal"><td colspan="2" class="lbl" style="font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;padding-top:14px;color:var(--muted)">${t}</td></tr>`;
+
+  let html = sec('Food & Lodging — Adults');
+  dayRows.forEach(r => {
+    if (r.combined > 0) html += row(`Day ${r.day} — Combined Food+Lodge (${adults} adults)`, r.combined);
+    else {
+      if (r.food > 0)    html += row(`Day ${r.day} — Food (${adults} adults)`, r.food);
+      if (r.lodging > 0) html += row(`Day ${r.day} — Lodging (${adults} adults)`, r.lodging);
+    }
+  });
+  html += row('Adult Food + Lodging Subtotal', totalFood + totalAdultLodging, 'subtotal');
+
+  if (children.length > 0) {
+    html += sec('Children Lodging (Age-rated)');
+    children.forEach(c => {
+      const tag = c.mult === 0 ? 'Free — under 3 yrs' : c.mult === 0.5 ? 'Half rate — age 3 to 6' : 'Full rate — age 7+';
+      html += row(`${c.name} (Age ${c.age}) — ${tag}`, '');
+    });
+    dayRows.forEach(r => { if (r.childLodging > 0) html += row(`Day ${r.day} — Children Lodging`, r.childLodging); });
+    html += row('Children Lodging Subtotal', totalChildLodging, 'subtotal');
+  }
+
+  if (carRows.length > 0) {
+    html += sec('Transport');
+    carRows.forEach(r => {
+      r.vehicles.forEach(v => html += row(`Day ${r.day}${v.type?' — '+v.type:''}${v.note?' ('+v.note+')':''}`, v.cost));
+      if (r.vehicles.length > 1) html += row(`Day ${r.day} — All Vehicles Subtotal`, r.dayTotal, 'subtotal');
+    });
+    html += row('Transport Total', totalCar, 'subtotal');
+  }
+
+  if (propRows.length > 0) {
+    html += sec('Properties (B2B Rates)');
+    propRows.forEach(r => html += row(`${r.name} — ${r.rooms} room(s) x ${r.nights} night(s) @ Rs.${r.rate}`, r.total));
+    html += row('Properties Subtotal', totalProp, 'subtotal');
+  }
+
+  if (extraRows.length > 0) {
+    html += sec('Extras & Miscellaneous');
+    extraRows.forEach(r => html += row(r.desc, r.amt));
+    html += row('Extras Subtotal', totalExtras, 'subtotal');
+  }
+
+  html += `<tr class="subtotal"><td class="lbl" style="font-weight:800;font-size:.95rem;color:var(--green-dk)">GRAND TOTAL (Base Cost)</td>
+            <td class="amt" style="font-size:1rem;color:var(--green-dk)">${fmt(grandTotal)}</td></tr>`;
+  html += `<tr class="subtotal"><td class="lbl" style="font-weight:800;font-size:.95rem;color:var(--gold-dk)">SELLING PRICE (+${markupPct}% Markup)</td>
+            <td class="amt" style="font-size:1rem;color:var(--gold-dk)">${fmt(sellingPrice)}</td></tr>`;
+  tbl.innerHTML = html;
+}
+
+function fmt(n) {
+  if (n === '' || n === undefined || n === null) return '';
+  return 'Rs.' + Math.round(n).toLocaleString('en-IN');
+}
+
+// ─── PDF GENERATION ─────────────────────────────────────────────
+// Uses LANDSCAPE A4 (297 x 210 mm) — eliminates column truncation
+// Two-column layout: Food/Children left, Transport/Props/Extras right
+// ────────────────────────────────────────────────────────────────
+function generatePDF() {
+  if (!window._calcData) recalculate();
+  const d = window._calcData;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const W = 297, H = 210, M = 14;
+  let y = 0;
+
+  // ── HEADER BAND ──
+  doc.setFillColor(26, 61, 43);
+  doc.rect(0, 0, W, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.setTextColor(255, 255, 255);
+  doc.text('SANA ON THE GO', M, 11);
+
+  doc.setFontSize(7);
+  doc.setTextColor(232, 201, 122);
+  doc.text('INTO THE WILD TOUR AND TRAVELS', M, 17);
+
+  doc.setFontSize(7);
+  doc.setTextColor(185, 220, 200);
+  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com  |  @sana.onthe.go', M, 23);
+
+  // right side
+  const tripName   = document.getElementById('tripName').value   || 'Trip Cost Estimate';
+  const clientName = document.getElementById('clientName').value || '';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text(tripName, W - M, 10, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(195, 220, 208);
+  if (clientName) doc.text('Client: ' + clientName, W - M, 16, { align: 'right' });
+  doc.text('Date: ' + new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }),
+    W - M, clientName ? 22 : 16, { align: 'right' });
+
+  doc.setDrawColor(201, 168, 76);
+  doc.setLineWidth(0.5);
+  doc.line(0, 28, W, 28);
+
+  y = 35;
+
+  // ── STATS STRIP ──
+  const stats = [
+    ['Duration',     `${d.nights}N / ${d.nights+1}D`],
+    ['Adults',       String(d.adults)],
+    ['Children',     String(d.children.length)],
+    ['Rooms',        String(d.rooms)],
+    ['Per Person',   fmtP(d.perPerson)],
+    ['Base Cost',    fmtP(d.grandTotal)],
+    ['Selling Price',fmtP(d.sellingPrice)],
+  ];
+  const sw = (W - M * 2) / stats.length;
+  doc.setFillColor(40, 95, 65);
+  doc.roundedRect(M, y - 4, W - M * 2, 18, 2, 2, 'F');
+  stats.forEach((s, i) => {
+    const cx = M + i * sw + sw / 2;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(170, 215, 185);
+    doc.text(s[0], cx, y + 1.5, { align: 'center' });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+    doc.text(s[1], cx, y + 9, { align: 'center' });
+  });
+  y += 19;
+
+  // ── TWO-COLUMN LAYOUT ──
+  const colW = (W - M * 2 - 6) / 2;
+  const col1 = M;
+  const col2 = M + colW + 6;
+  const secSt = { fillColor:[237,245,240], fontStyle:'bold', textColor:[20,55,36], fontSize:7.5 };
+
+  // LEFT: Food & Lodging + Children
+  let y1 = y;
+  const flRows = [];
+  flRows.push([{ content:'FOOD & LODGING — ADULTS', colSpan:3, styles:secSt }]);
+  d.dayRows.forEach(r => {
+    if (r.combined > 0) flRows.push([`Day ${r.day} Combined (Food+Lodge)`, `${d.adults} adults`, fmtP(r.combined)]);
+    else {
+      if (r.food > 0)    flRows.push([`Day ${r.day} Food`,    `${d.adults} adults`, fmtP(r.food)]);
+      if (r.lodging > 0) flRows.push([`Day ${r.day} Lodging`, `${d.adults} adults`, fmtP(r.lodging)]);
+    }
+  });
+  flRows.push([{ content:'Adults Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
+               { content:fmtP(d.totalFood + d.totalAdultLodging), styles:{fontStyle:'bold',halign:'right'} }]);
+
+  if (d.children.length > 0) {
+    flRows.push([{ content:'CHILDREN LODGING', colSpan:3, styles:secSt }]);
+    d.children.forEach(c => {
+      const tag = c.mult===0 ? 'Free (under 3)' : c.mult===0.5 ? 'Half rate (3-6 yrs)' : 'Full rate (7+)';
+      flRows.push([`${c.name} — Age ${c.age}`, tag, '']);
+    });
+    d.dayRows.forEach(r => {
+      if (r.childLodging > 0) flRows.push([`Day ${r.day} Children Lodging`, '', fmtP(r.childLodging)]);
+    });
+    flRows.push([{ content:'Children Lodging Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
+                 { content:fmtP(d.totalChildLodging), styles:{fontStyle:'bold',halign:'right'} }]);
+  }
+
+  doc.autoTable({
+    startY: y1,
+    head: [['Item', 'Details', 'Amount']],
+    body: flRows,
+    tableWidth: colW,
+    margin: { left: col1, right: W - col1 - colW },
+    styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
+    headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
+    alternateRowStyles: { fillColor:[248,246,242] },
+    columnStyles: {
+      0: { cellWidth: colW * 0.44 },
+      1: { cellWidth: colW * 0.30 },
+      2: { cellWidth: colW * 0.26, halign:'right' }
+    },
+  });
+  y1 = doc.lastAutoTable.finalY + 4;
+
+  // RIGHT: Transport + Properties + Extras
+  let y2 = y;
+
+  if (d.carRows.length > 0) {
+    const carRows2 = [[{ content:'TRANSPORT — VEHICLES PER DAY', colSpan:3, styles:secSt }]];
+    d.carRows.forEach(r => {
+      r.vehicles.forEach(v => carRows2.push([
+        `Day ${r.day}${v.type?' — '+v.type:''}`,
+        v.note || '',
+        fmtP(v.cost)
+      ]));
+      if (r.vehicles.length > 1)
+        carRows2.push([{ content:`Day ${r.day} Subtotal`, colSpan:2, styles:{fontStyle:'bold'} },
+                       { content:fmtP(r.dayTotal), styles:{fontStyle:'bold',halign:'right'} }]);
+    });
+    carRows2.push([{ content:'Transport Total', colSpan:2, styles:{fontStyle:'bold'} },
+                   { content:fmtP(d.totalCar), styles:{fontStyle:'bold',halign:'right'} }]);
+    doc.autoTable({
+      startY: y2,
+      head: [['Vehicle / Day', 'Route', 'Amount']],
+      body: carRows2,
+      tableWidth: colW,
+      margin: { left:col2, right:W-col2-colW },
+      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
+      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
+      alternateRowStyles: { fillColor:[248,246,242] },
+      columnStyles: { 0:{cellWidth:colW*0.38}, 1:{cellWidth:colW*0.37}, 2:{cellWidth:colW*0.25,halign:'right'} },
+    });
+    y2 = doc.lastAutoTable.finalY + 4;
+  }
+
+  if (d.propRows.length > 0) {
+    const pRows = [[{ content:'PROPERTIES (B2B RATES)', colSpan:3, styles:secSt }]];
+    d.propRows.forEach(r => pRows.push([r.name, `${r.rooms}rm x ${r.nights}nt @ Rs.${r.rate}`, fmtP(r.total)]));
+    pRows.push([{ content:'Properties Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
+                { content:fmtP(d.totalProp), styles:{fontStyle:'bold',halign:'right'} }]);
+    doc.autoTable({
+      startY: y2,
+      head: [['Property', 'Basis', 'Amount']],
+      body: pRows,
+      tableWidth: colW,
+      margin: { left:col2, right:W-col2-colW },
+      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
+      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
+      alternateRowStyles: { fillColor:[248,246,242] },
+      columnStyles: { 0:{cellWidth:colW*0.4}, 1:{cellWidth:colW*0.35}, 2:{cellWidth:colW*0.25,halign:'right'} },
+    });
+    y2 = doc.lastAutoTable.finalY + 4;
+  }
+
+  if (d.extraRows.length > 0) {
+    const eRows = [[{ content:'EXTRAS & MISCELLANEOUS', colSpan:2, styles:secSt }]];
+    d.extraRows.forEach(r => eRows.push([r.desc, fmtP(r.amt)]));
+    eRows.push([{ content:'Extras Subtotal', styles:{fontStyle:'bold'} },
+                { content:fmtP(d.totalExtras), styles:{fontStyle:'bold',halign:'right'} }]);
+    doc.autoTable({
+      startY: y2,
+      head: [['Description', 'Amount']],
+      body: eRows,
+      tableWidth: colW,
+      margin: { left:col2, right:W-col2-colW },
+      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
+      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
+      alternateRowStyles: { fillColor:[248,246,242] },
+      columnStyles: { 0:{cellWidth:colW*0.75}, 1:{cellWidth:colW*0.25,halign:'right'} },
+    });
+    y2 = doc.lastAutoTable.finalY + 4;
+  }
+
+  // ── TOTALS BOX (full width) ──
+  const yFinal = Math.max(y1, y2) + 4;
+  const totals = [
+    { lbl:'Base Cost (Total)',                          val:fmtP(d.grandTotal),              hi:false },
+    { lbl:`Markup (${d.markupPct}%)`,                   val:fmtP(d.sellingPrice-d.grandTotal), hi:false },
+    { lbl:'SELLING PRICE',                              val:fmtP(d.sellingPrice),             hi:true  },
+    { lbl:`Per Person (base, ${d.totalPersons} pax)`,   val:fmtP(d.perPerson),               hi:false },
+  ];
+  const boxH = 7 + totals.length * 9;
+  const needPage = yFinal + boxH > H - 16;
+  const ty = needPage ? (doc.addPage(), 20) : yFinal;
+
+  doc.setFillColor(26, 61, 43);
+  doc.roundedRect(M, ty, W - M*2, boxH, 3, 3, 'F');
+  totals.forEach((t, i) => {
+    if (t.hi) {
+      doc.setFillColor(201, 168, 76);
+      doc.rect(M, ty + 7 + i*9, W - M*2, 9, 'F');
+    }
+    doc.setFont('helvetica', t.hi ? 'bold' : 'normal');
+    doc.setFontSize(t.hi ? 10 : 9);
+    if (t.hi) doc.setTextColor(26, 61, 43); else doc.setTextColor(255, 255, 255);
+    doc.text(t.lbl, M + 6, ty + 13 + i*9);
+    doc.text(t.val, W - M - 5, ty + 13 + i*9, { align:'right' });
+  });
+
+  // ── FOOTER ──
+  doc.setFillColor(13, 26, 16);
+  doc.rect(0, H - 12, W, 12, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(145,180,160);
+  doc.text('Sana On The Go  |  Into The Wild Tour and Travels  |  Siliguri, North Bengal', W/2, H-7, {align:'center'});
+  doc.setTextColor(201,168,76);
+  doc.text('+91 98747 40763  •  sayantikaintothewild@gmail.com  •  Instagram: @sana.onthe.go', W/2, H-2, {align:'center'});
+
+  doc.save(`SanaOnTheGo_${(tripName||'Quote').replace(/\s+/g,'_')}.pdf`);
+}
+
+function fmtP(n) {
+  if (n === '' || n == null) return '';
+  return 'Rs.' + Math.round(n).toLocaleString('en-IN');
+}
+
+// ─── RESET ──────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('Reset everything?')) return;
+  document.getElementById('tripName').value = '';
+  document.getElementById('clientName').value = '';
+  document.getElementById('numNights').value = 3;
+  document.getElementById('numAdults').value = 4;
+  document.getElementById('numRooms').value  = 2;
+  document.getElementById('markupPct').value = 15;
+  document.getElementById('childrenList').innerHTML = '';
+  document.getElementById('extrasList').innerHTML   = '';
+  childCount = 0; extraCount = 0;
+  carEntryCount = {}; carEntryVisible = {};
+  selectedProperties.clear();
+  document.querySelectorAll('.prop-card').forEach(c => c.classList.remove('selected'));
+  rebuildAll();
+}
+
+setTimeout(recalculate, 200);
+</script>
+</body>
+</html>
