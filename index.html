@@ -111,6 +111,8 @@
     .markup-result{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 16px;font-size:.88rem}
     .markup-result strong{color:var(--green);font-size:1rem}
     .note{font-size:.78rem;color:var(--muted);margin-top:8px;font-style:italic}
+    .copy-fwd-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+    .copy-fwd-btn:hover{background:var(--green-dk)}
     @media(max-width:640px){
       header{padding:14px 16px}
       .main-wrap{padding:20px 12px 60px}
@@ -175,12 +177,13 @@
             <th>Lodging Only (₹/adult)</th>
             <th>Food+Lodging Combined (₹/adult)</th>
             <th>Use Combined?</th>
+            <th>Copy Forward</th>
           </tr>
         </thead>
         <tbody id="daysTableBody"></tbody>
       </table>
     </div>
-    <p class="note">Check "Use Combined?" when a property bundles food & lodging. Child lodging is auto-applied as a fraction of the lodging/combined rate based on age rules.</p>
+    <p class="note">Check "Use Combined?" when a property bundles food & lodging. Use "Copy Forward" to apply the same rates to the next N days. Child lodging is auto-applied based on age rules.</p>
   </div>
 
   <!-- CARD 4: TRANSPORT (MULTI-CAR) -->
@@ -363,15 +366,49 @@ function rebuildDaysTable() {
   let html = '';
   for (let d = 1; d <= days; d++) {
     const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
+    const maxCopy = days - d; // how many days after this one
+    const copyCtrl = maxCopy > 0
+      ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
+           <input type="number" id="copyQty_${d}" value="1" min="1" max="${maxCopy}"
+             style="width:46px;padding:4px 6px;font-size:.8rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
+           <button onclick="copyDayForward(${d})" class="copy-fwd-btn" title="Copy this day's rates to next N days">▶ Apply</button>
+         </div>`
+      : `<span style="font-size:.74rem;color:var(--muted)">Last day</span>`;
     html += `<tr>
       <td class="day-label">${lbl}</td>
       <td><input type="number" id="food_${d}" value="0" min="0" oninput="recalculate()"></td>
       <td><input type="number" id="lodging_${d}" value="0" min="0" oninput="recalculate()"></td>
       <td><input type="number" id="combined_${d}" value="0" min="0" oninput="recalculate()"></td>
       <td style="text-align:center"><input type="checkbox" id="useCombined_${d}" onchange="recalculate()" style="width:auto;transform:scale(1.4)"></td>
+      <td>${copyCtrl}</td>
     </tr>`;
   }
   document.getElementById('daysTableBody').innerHTML = html;
+}
+
+function copyDayForward(fromDay) {
+  const nights = parseInt(document.getElementById('numNights').value) || 3;
+  const days = nights + 1;
+  const qty = parseInt(document.getElementById(`copyQty_${fromDay}`)?.value) || 1;
+  const food     = document.getElementById(`food_${fromDay}`)?.value || '0';
+  const lodging  = document.getElementById(`lodging_${fromDay}`)?.value || '0';
+  const combined = document.getElementById(`combined_${fromDay}`)?.value || '0';
+  const useComb  = document.getElementById(`useCombined_${fromDay}`)?.checked || false;
+  const limit = Math.min(fromDay + qty, days);
+  for (let d = fromDay + 1; d <= limit; d++) {
+    const f = document.getElementById(`food_${d}`);
+    const l = document.getElementById(`lodging_${d}`);
+    const c = document.getElementById(`combined_${d}`);
+    const u = document.getElementById(`useCombined_${d}`);
+    if (f) f.value = food;
+    if (l) l.value = lodging;
+    if (c) c.value = combined;
+    if (u) u.checked = useComb;
+  }
+  // Flash feedback
+  const btn = document.querySelector(`#daysTableBody tr:nth-child(${fromDay}) .copy-fwd-btn`);
+  if (btn) { btn.textContent = '✓ Done'; btn.style.background='var(--green-lt)'; setTimeout(()=>{ btn.textContent='▶ Apply'; btn.style.background=''; },1200); }
+  recalculate();
 }
 
 // ─── CAR BLOCKS (MULTI-VEHICLE PER DAY) ─────────────────────────
@@ -386,13 +423,26 @@ function rebuildCarBlocks() {
     carEntryCount[d] = 1;
     carEntryVisible[d] = new Set([1]);
     const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
+    const maxCopy = days - d;
+    const copyCtrl = maxCopy > 0
+      ? `<div style="display:flex;align-items:center;gap:5px">
+           <span style="font-size:.75rem;color:var(--muted);white-space:nowrap">Copy to next</span>
+           <input type="number" id="carCopyQty_${d}" value="1" min="1" max="${maxCopy}"
+             style="width:46px;padding:4px 6px;font-size:.8rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
+           <span style="font-size:.75rem;color:var(--muted)">day(s)</span>
+           <button class="copy-fwd-btn" onclick="copyCarForward(${d})" title="Copy vehicle entries to next N days">▶ Apply</button>
+         </div>`
+      : '';
     const block = document.createElement('div');
     block.className = 'car-day-block';
     block.id = `carBlock_${d}`;
     block.innerHTML = `
       <div class="car-day-header">
         <span class="car-day-title">🚗 ${lbl}</span>
-        <button class="btn btn-sm btn-outline" onclick="addCarEntry(${d})">+ Add Vehicle</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${copyCtrl}
+          <button class="btn btn-sm btn-outline" onclick="addCarEntry(${d})">+ Add Vehicle</button>
+        </div>
       </div>
       <div id="carEntries_${d}"></div>`;
     container.appendChild(block);
@@ -412,7 +462,11 @@ function appendCarEntry(day, entryId) {
   div.innerHTML = `
     <div class="field">
       <label>Vehicle Type</label>
-      <input type="text" id="carType_${day}_${entryId}" placeholder="e.g. Bolero, Alto">
+      <select id="carType_${day}_${entryId}" style="padding:9px 12px;font-size:.88rem">
+        <option value="">— Select —</option>
+        <option value="Bolero">Bolero</option>
+        <option value="Swift">Swift</option>
+      </select>
     </div>
     <div class="field">
       <label>Cost (₹)</label>
@@ -437,6 +491,55 @@ function addCarEntry(day) {
 function removeCarEntry(day, entryId) {
   document.getElementById(`carEntry_${day}_${entryId}`)?.remove();
   carEntryVisible[day]?.delete(entryId);
+  recalculate();
+}
+
+function copyCarForward(fromDay) {
+  const nights = parseInt(document.getElementById('numNights').value) || 3;
+  const days = nights + 1;
+  const qty = parseInt(document.getElementById(`carCopyQty_${fromDay}`)?.value) || 1;
+  const limit = Math.min(fromDay + qty, days);
+  // Collect source vehicles
+  const srcVehicles = [];
+  const visSet = carEntryVisible[fromDay] || new Set([1]);
+  visSet.forEach(e => {
+    const type = document.getElementById(`carType_${fromDay}_${e}`)?.value || '';
+    const cost = document.getElementById(`carCost_${fromDay}_${e}`)?.value || '0';
+    const note = document.getElementById(`carNote_${fromDay}_${e}`)?.value || '';
+    srcVehicles.push({ type, cost, note });
+  });
+  // Apply to target days
+  for (let d = fromDay + 1; d <= limit; d++) {
+    // Clear existing entries except entry 1
+    const oldVis = [...(carEntryVisible[d] || new Set([1]))];
+    oldVis.forEach(e => { if (e > 1) { document.getElementById(`carEntry_${d}_${e}`)?.remove(); carEntryVisible[d]?.delete(e); } });
+    carEntryCount[d] = 1;
+    // Fill entry 1 from first source vehicle
+    if (srcVehicles[0]) {
+      const t = document.getElementById(`carType_${d}_1`);
+      const c = document.getElementById(`carCost_${d}_1`);
+      const n = document.getElementById(`carNote_${d}_1`);
+      if (t) t.value = srcVehicles[0].type;
+      if (c) c.value = srcVehicles[0].cost;
+      if (n) n.value = srcVehicles[0].note;
+    }
+    // Add additional vehicles if source had more
+    for (let i = 1; i < srcVehicles.length; i++) {
+      carEntryCount[d]++;
+      const newId = carEntryCount[d];
+      carEntryVisible[d].add(newId);
+      appendCarEntry(d, newId);
+      const t = document.getElementById(`carType_${d}_${newId}`);
+      const c = document.getElementById(`carCost_${d}_${newId}`);
+      const n = document.getElementById(`carNote_${d}_${newId}`);
+      if (t) t.value = srcVehicles[i].type;
+      if (c) c.value = srcVehicles[i].cost;
+      if (n) n.value = srcVehicles[i].note;
+    }
+  }
+  // Flash feedback
+  const btn = document.querySelector(`#carBlock_${fromDay} .copy-fwd-btn`);
+  if (btn) { btn.textContent = '✓ Done'; btn.style.background='var(--green-lt)'; setTimeout(()=>{ btn.textContent='▶ Apply'; btn.style.background=''; },1200); }
   recalculate();
 }
 
