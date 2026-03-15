@@ -848,6 +848,8 @@ function generatePDF() {
   // helpers
   const fmtDate=s=>{ if(!s)return ''; const dt=new Date(s+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
   const checkPage=(need)=>{ if(y+need>276){ doc.addPage(); y=20; } };
+  // Remove emoji and non-latin-1 chars that helvetica cannot render
+  const se=s=>s.replace(/[\u{1F000}-\u{1FFFF}]/gu,'').replace(/[\u{2600}-\u{27FF}]/gu,'').replace(/[\u{FE00}-\u{FEFF}]/gu,'').replace(/[^\x00-\xFF]/g,'').replace(/\s{2,}/g,' ').trim();
 
   // ── HEADER ──────────────────────────────────────────────
   doc.setFillColor(26,61,43);
@@ -876,14 +878,14 @@ function generatePDF() {
   y+=10;
 
   // ── CLIENT + TRIP INFO BOX ──────────────────────────────
-  const clientName=document.getElementById('clientName').value||'—';
-  const clientPhone=document.getElementById('clientPhone').value||'';
-  const tripName=document.getElementById('tripName').value||'—';
+  const clientName=se(document.getElementById('clientName').value||'—');
+  const clientPhone=se(document.getElementById('clientPhone').value||'');
+  const tripName=se(document.getElementById('tripName').value||'—');
   const tripStart=document.getElementById('tripStart').value;
   const tripEnd=document.getElementById('tripEnd').value;
-  const places=document.getElementById('placesCovered').value||'';
-  const pickup=document.getElementById('pickupDrop').value||'';
-  const accom=document.getElementById('accomType').value||'';
+  const places=se(document.getElementById('placesCovered').value||'');
+  const pickup=se(document.getElementById('pickupDrop').value||'');
+  const accom=se(document.getElementById('accomType').value||'');
   const nights=document.getElementById('numNights').value||'—';
 
   doc.setFillColor(245,242,237);
@@ -929,7 +931,7 @@ function generatePDF() {
   for(let i=1;i<=itinCount;i++){
     const el=document.getElementById(`itinText_${i}`);
     if(!el) continue;
-    const txt=el.value.trim();
+    const txt=se(el.value.trim());
     if(txt) itinDays.push({day:i,txt});
   }
 
@@ -970,26 +972,26 @@ function generatePDF() {
   }
 
   // ── INCLUSIONS ─────────────────────────────────────────
-  const inclChips=[...document.querySelectorAll('#inclChips .chip.on')].map(c=>c.textContent.trim());
-  const customIncl=(document.getElementById('customIncl').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const inclChips=[...document.querySelectorAll('#inclChips .chip.on')].map(c=>se(c.textContent.trim()));
+  const customIncl=(document.getElementById('customIncl').value||'').split('\n').map(s=>se(s.trim())).filter(Boolean);
   const allIncl=[...inclChips,...customIncl];
 
-  const exclChips=[...document.querySelectorAll('#exclChips .chip.on')].map(c=>c.textContent.trim());
-  const customExcl=(document.getElementById('customExcl').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const exclChips=[...document.querySelectorAll('#exclChips .chip.on')].map(c=>se(c.textContent.trim()));
+  const customExcl=(document.getElementById('customExcl').value||'').split('\n').map(s=>se(s.trim())).filter(Boolean);
   const allExcl=[...exclChips,...customExcl];
 
   if(allIncl.length>0||allExcl.length>0){
-    checkPage(16);
+    const inclH=allIncl.length>0?allIncl.length*6+14:0;
+    const exclH=allExcl.length>0?allExcl.length*6+14:0;
+    const colH=Math.max(inclH,exclH,14);
+    const totalBlockH=9+6+colH+10; // header bar + gap + columns + bottom margin
+    checkPage(totalBlockH); // check BEFORE drawing anything
+
     doc.setFillColor(45,106,79);
     doc.rect(M,y,CW,9,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
     doc.text('INCLUSIONS & EXCLUSIONS',M+6,y+6.2);
     y+=14;
-
-    const inclH=allIncl.length>0?allIncl.length*6+10:0;
-    const exclH=allExcl.length>0?allExcl.length*6+10:0;
-    const colH=Math.max(inclH,exclH,10);
-    checkPage(colH+6);
 
     const halfW=(CW-6)/2;
 
@@ -999,7 +1001,7 @@ function generatePDF() {
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(26,61,43);
       doc.text('INCLUDED',M+5,y+7);
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
-      allIncl.forEach((item,i)=>{ doc.text('• '+item,M+5,y+15+i*6); });
+      allIncl.forEach((item,i)=>{ doc.text('- '+item,M+5,y+15+i*6); });
     }
 
     if(allExcl.length>0){
@@ -1009,7 +1011,7 @@ function generatePDF() {
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(160,20,20);
       doc.text('NOT INCLUDED',rx2+5,y+7);
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
-      allExcl.forEach((item,i)=>{ doc.text('• '+item,rx2+5,y+15+i*6); });
+      allExcl.forEach((item,i)=>{ doc.text('- '+item,rx2+5,y+15+i*6); });
     }
 
     y+=colH+10;
