@@ -1,1041 +1,1077 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Trip Cost Calculator — Sana On The Go</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    :root {
-      --green:#2d6a4f; --green-lt:#52b788; --green-dk:#1a3d2b; --green-mid:#3d8b62;
-      --gold:#c9a84c; --gold-lt:#e8c97a; --gold-dk:#a07830;
-      --bg:#f6f3ee; --bg2:#eef0eb; --text:#1c1c1c; --muted:#64705e;
-      --card:#ffffff; --radius:12px; --shadow:0 4px 24px rgba(26,61,43,0.10); --border:#d8e0d4;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
-    header{background:var(--green-dk);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,0.2);position:sticky;top:0;z-index:100}
-    .logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:#fff;letter-spacing:.3px}
-    .logo span{color:var(--gold-lt)}
-    .header-badge{font-size:.72rem;background:rgba(201,168,76,.2);color:var(--gold-lt);border:1px solid rgba(201,168,76,.35);padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
-    .main-wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px}
-    .page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,4vw,2.6rem);color:var(--green-dk);margin-bottom:6px}
-    .page-sub{color:var(--muted);font-size:.93rem;margin-bottom:32px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin-bottom:20px;box-shadow:var(--shadow)}
-    .card-title{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--green);margin-bottom:4px;display:flex;align-items:center;gap:10px}
-    .card-sub{color:var(--muted);font-size:.82rem;margin-bottom:20px}
-    .form-row{display:grid;gap:16px;margin-bottom:4px}
-    .form-row.two{grid-template-columns:1fr 1fr}
-    .form-row.three{grid-template-columns:1fr 1fr 1fr}
-    .field{display:flex;flex-direction:column;gap:5px}
-    label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-    input[type="number"],input[type="text"],select{border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:.93rem;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);transition:border-color .2s,box-shadow .2s;width:100%}
-    input[type="number"]:focus,input[type="text"]:focus,select:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(82,183,136,.15);background:#fff}
-    input[type="number"]{-moz-appearance:textfield}
-    input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
-    /* ── DAYS TABLE ── */
-    .days-table-wrap{overflow-x:auto}
-    .days-table{width:100%;border-collapse:collapse;font-size:.88rem}
-    .days-table th{background:var(--green-dk);color:rgba(255,255,255,.88);padding:10px 14px;text-align:left;font-size:.75rem;letter-spacing:.5px;font-weight:600;white-space:nowrap}
-    .days-table th:first-child{border-radius:8px 0 0 0}
-    .days-table th:last-child{border-radius:0 8px 0 0}
-    .days-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
-    .days-table tr:last-child td{border-bottom:none}
-    .days-table tr:nth-child(even) td{background:#f8f6f2}
-    .days-table input{width:100%;min-width:80px;padding:7px 10px;font-size:.85rem;border:1.5px solid var(--border);border-radius:7px;background:#fafaf8;color:var(--text);font-family:'DM Sans',sans-serif}
-    .days-table input:focus{outline:none;border-color:var(--green-mid);background:#fff;box-shadow:0 0 0 2px rgba(82,183,136,.15)}
-    .day-label{font-weight:600;color:var(--green-dk);font-size:.82rem;white-space:nowrap}
-    /* ── CHILDREN ── */
-    .children-info-box{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px 16px;font-size:.83rem;color:var(--muted);margin-bottom:16px;line-height:1.9}
-    .children-info-box strong{color:var(--green-dk)}
-    .child-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;background:#fafaf8;border:1px solid var(--border);border-radius:9px;padding:12px 14px}
-    .age-badge{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:6px}
-    .age-free{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
-    .age-half{background:#fff3e0;color:#e65100;border:1px solid #ffcc80}
-    .age-full{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
-    /* ── CAR BLOCKS ── */
-    .car-day-block{border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:12px;background:#fafaf8}
-    .car-day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .car-day-title{font-weight:700;font-size:.85rem;color:var(--green-dk)}
-    .car-entry{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px;align-items:flex-end;margin-bottom:8px}
-    /* ── PROPERTIES ── */
-    .region-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-    .rtab{padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);transition:all .2s}
-    .rtab:hover,.rtab.active{background:var(--green);color:#fff;border-color:var(--green)}
-    .prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
-    .prop-card{border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all .2s;background:#fafaf8;position:relative}
-    .prop-card:hover{border-color:var(--green-mid);background:#f0f7f3}
-    .prop-card.selected{border-color:var(--green);background:#eaf5ee;box-shadow:0 0 0 3px rgba(45,106,79,.12)}
-    .prop-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;color:var(--green);font-weight:700;font-size:.9rem}
-    .prop-name{font-weight:600;font-size:.9rem;color:var(--green-dk);margin-bottom:2px}
-    .prop-location{font-size:.75rem;color:var(--muted);margin-bottom:8px}
-    .prop-rate{font-size:.78rem;color:var(--muted)}
-    .prop-rate strong{color:var(--green);font-size:.88rem}
-    .prop-region-label{font-size:.68rem;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
-    /* ── SUMMARY ── */
-    .summary-box{background:linear-gradient(135deg,var(--green-dk) 0%,var(--green) 100%);border-radius:var(--radius);padding:28px 32px;color:#fff;margin-bottom:20px;box-shadow:0 8px 32px rgba(26,61,43,.25)}
-    .summary-box h2{font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:20px;color:#fff}
-    .summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
-    .sum-item{background:rgba(255,255,255,.1);border-radius:9px;padding:12px 16px}
-    .sum-item .label{font-size:.72rem;color:rgba(255,255,255,.64);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:4px}
-    .sum-item .value{font-size:1.05rem;font-weight:700;color:#fff}
-    .sum-total{background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.4);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
-    .sum-total .label{font-size:.9rem;color:rgba(255,255,255,.84);font-weight:600}
-    .sum-total .big{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--gold-lt)}
-    /* ── BREAKDOWN ── */
-    .breakdown-table{width:100%;border-collapse:collapse;margin-top:8px}
-    .breakdown-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:.88rem}
-    .breakdown-table tr:last-child td{border-bottom:none}
-    .breakdown-table .lbl{color:var(--muted)}
-    .breakdown-table .amt{text-align:right;font-weight:600}
-    .breakdown-table .subtotal td{background:var(--bg2)}
-    .breakdown-table .subtotal .lbl{color:var(--green-dk);font-weight:600}
-    /* ── BUTTONS ── */
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
-    .btn-primary{background:var(--green);color:#fff}
-    .btn-primary:hover{background:var(--green-dk);transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,61,43,.3)}
-    .btn-gold{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dk) 100%);color:#fff}
-    .btn-gold:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 4px 16px rgba(160,120,48,.35)}
-    .btn-outline{background:transparent;color:var(--green);border:1.5px solid var(--green)}
-    .btn-outline:hover{background:#eaf5ee}
-    .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
-    .btn-danger{background:transparent;color:#c0392b;border:1.5px solid #c0392b}
-    .btn-danger:hover{background:#fdf0ee}
-    .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-    .btn-lg{padding:15px 32px;font-size:1rem;border-radius:10px}
-    .markup-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:16px}
-    .markup-result{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 16px;font-size:.88rem}
-    .markup-result strong{color:var(--green);font-size:1rem}
-    .note{font-size:.78rem;color:var(--muted);margin-top:8px;font-style:italic}
-    .copy-fwd-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
-    .copy-fwd-btn:hover{background:var(--green-dk)}
-    @media(max-width:640px){
-      header{padding:14px 16px}
-      .main-wrap{padding:20px 12px 60px}
-      .card{padding:18px 16px}
-      .form-row.three{grid-template-columns:1fr 1fr}
-      .form-row.two{grid-template-columns:1fr}
-      .btn-lg{width:100%;justify-content:center}
-      .car-entry{grid-template-columns:1fr 1fr}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trip Estimate Generator — Sana On The Go</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --green:#2d6a4f;--green-lt:#52b788;--green-dk:#1a3d2b;--green-mid:#3d8b62;
+  --gold:#c9a84c;--gold-lt:#e8c97a;--gold-dk:#a07830;
+  --bg:#f4f1ec;--bg2:#eceae4;--text:#1c1c1c;--muted:#64705e;
+  --card:#fff;--radius:12px;--shadow:0 2px 16px rgba(26,61,43,.08);--border:#d8e0d4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+
+/* HEADER */
+header{background:var(--green-dk);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.2);position:sticky;top:0;z-index:100}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:700;color:#fff;letter-spacing:.3px}
+.logo span{color:var(--gold-lt)}
+.header-badge{font-size:.7rem;background:rgba(201,168,76,.18);color:var(--gold-lt);border:1px solid rgba(201,168,76,.3);padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+
+/* LAYOUT */
+.wrap{max-width:980px;margin:0 auto;padding:32px 20px 80px}
+.section-heading{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--green-dk);margin:32px 0 14px;display:flex;align-items:center;gap:10px}
+.section-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px 26px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--green-mid);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* FORM */
+.row{display:grid;gap:14px;margin-bottom:14px}
+.row.r2{grid-template-columns:1fr 1fr}
+.row.r3{grid-template-columns:1fr 1fr 1fr}
+.row.r4{grid-template-columns:1fr 1fr 1fr 1fr}
+.row.r1{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+input[type="text"],input[type="number"],input[type="date"],textarea,select{
+  border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;
+  font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafaf8;color:var(--text);
+  transition:border-color .2s,box-shadow .2s;width:100%
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(82,183,136,.12);background:#fff}
+input[type="number"]{-moz-appearance:textfield}
+input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
+textarea{resize:vertical;min-height:68px;line-height:1.6}
+
+/* ITINERARY */
+.itin-day{background:#fafaf8;border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start}
+.itin-day-num{background:var(--green);color:#fff;border-radius:7px;font-size:.7rem;font-weight:700;text-align:center;padding:8px 6px;letter-spacing:.5px;white-space:nowrap}
+.itin-day textarea{min-height:60px;font-size:.87rem}
+.btn-rm{background:#fee2e2;border:none;color:#c0392b;border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.btn-rm:hover{background:#fca5a5}
+.btn-add-day{display:inline-flex;align-items:center;gap:7px;background:none;border:1.5px dashed var(--green-lt);color:var(--green);padding:8px 16px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;margin-top:6px;transition:background .2s}
+.btn-add-day:hover{background:#eaf5ee}
+
+/* CHIPS */
+.chip-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chip{padding:5px 12px;border-radius:20px;font-size:.75rem;font-weight:600;border:1.5px solid var(--border);background:#fafaf8;cursor:pointer;transition:all .15s;color:var(--text);user-select:none}
+.chip:hover{border-color:var(--green);color:var(--green);background:#eaf5ee}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* DAYS TABLE */
+.dtable-wrap{overflow-x:auto}
+.dtable{width:100%;border-collapse:collapse;font-size:.86rem}
+.dtable th{background:var(--green-dk);color:rgba(255,255,255,.9);padding:9px 12px;text-align:left;font-size:.72rem;letter-spacing:.5px;font-weight:600;white-space:nowrap}
+.dtable th:first-child{border-radius:7px 0 0 0}.dtable th:last-child{border-radius:0 7px 0 0}
+.dtable td{padding:7px 9px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:nth-child(even) td{background:#f8f6f2}
+.dtable input,.dtable select{width:100%;min-width:70px;padding:6px 8px;font-size:.83rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8;color:var(--text);font-family:'DM Sans',sans-serif}
+.dtable input:focus,.dtable select:focus{outline:none;border-color:var(--green-mid);background:#fff}
+.dlabel{font-weight:700;color:var(--green-dk);font-size:.8rem;white-space:nowrap}
+
+/* CAR BLOCKS */
+.car-block{border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:10px;background:#fafaf8}
+.car-block-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.car-block-title{font-weight:700;font-size:.83rem;color:var(--green-dk)}
+.car-entry{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px;align-items:flex-end;margin-bottom:8px}
+
+/* CHILDREN */
+.info-box{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 15px;font-size:.82rem;color:var(--muted);margin-bottom:14px;line-height:1.9}
+.info-box strong{color:var(--green-dk)}
+.child-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;background:#fafaf8;border:1px solid var(--border);border-radius:9px;padding:11px 14px}
+.age-badge{display:inline-block;font-size:.7rem;font-weight:600;padding:3px 9px;border-radius:20px;margin-top:5px}
+.age-free{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.age-half{background:#fff3e0;color:#e65100;border:1px solid #ffcc80}
+.age-full{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+
+/* PROPERTIES */
+.rtabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.rtab{padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);transition:all .2s}
+.rtab:hover,.rtab.on{background:var(--green);color:#fff;border-color:var(--green)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pcard{border:1.5px solid var(--border);border-radius:9px;padding:13px 14px;cursor:pointer;transition:all .2s;background:#fafaf8;position:relative}
+.pcard:hover{border-color:var(--green-mid);background:#f0f7f3}
+.pcard.on{border-color:var(--green);background:#eaf5ee;box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.pcard.on::after{content:'✓';position:absolute;top:9px;right:11px;color:var(--green);font-weight:700;font-size:.88rem}
+.pname{font-weight:600;font-size:.88rem;color:var(--green-dk);margin-bottom:2px}
+.ploc{font-size:.73rem;color:var(--muted);margin-bottom:6px}
+.prate{font-size:.76rem;color:var(--muted)}
+.prate strong{color:var(--green);font-size:.85rem}
+.pregion{font-size:.66rem;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+
+/* SUMMARY */
+.sum-box{background:linear-gradient(135deg,var(--green-dk),var(--green));border-radius:var(--radius);padding:24px 28px;color:#fff;margin-bottom:16px;box-shadow:0 6px 28px rgba(26,61,43,.22)}
+.sum-box h3{font-family:'Cormorant Garamond',serif;font-size:1.3rem;margin-bottom:16px}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.sum-item{background:rgba(255,255,255,.1);border-radius:8px;padding:11px 14px}
+.sum-item .sl{font-size:.68rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:3px}
+.sum-item .sv{font-size:1rem;font-weight:700;color:#fff}
+.sum-total{background:rgba(201,168,76,.22);border:1px solid rgba(201,168,76,.4);border-radius:9px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center}
+.sum-total .sl{font-size:.88rem;color:rgba(255,255,255,.82);font-weight:600}
+.sum-total .sv{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:700;color:var(--gold-lt)}
+
+/* BREAKDOWN */
+.bktable{width:100%;border-collapse:collapse;margin-top:6px}
+.bktable td{padding:7px 11px;border-bottom:1px solid var(--border);font-size:.86rem}
+.bktable .bl{color:var(--muted)}.bktable .ba{text-align:right;font-weight:600}
+.bktable .bs td{background:var(--bg2)}.bktable .bs .bl{color:var(--green-dk);font-weight:600}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dk);transform:translateY(-1px)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dk));color:#fff}.btn-gold:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.btn-out{background:transparent;color:var(--green);border:1.5px solid var(--green)}.btn-out:hover{background:#eaf5ee}
+.btn-sm{padding:5px 11px;font-size:.76rem;border-radius:6px}
+.btn-danger{background:transparent;color:#c0392b;border:1.5px solid #c0392b}.btn-danger:hover{background:#fdf0ee}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.btn-lg{padding:14px 30px;font-size:.97rem;border-radius:10px}
+.cfwd-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:.73rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+.cfwd-btn:hover{background:var(--green-dk)}
+
+.markup-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:14px}
+.markup-result{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:.86rem}
+.markup-result strong{color:var(--green);font-size:.96rem}
+.hint{font-size:.75rem;color:var(--muted);margin-top:5px;font-style:italic}
+
+@media(max-width:640px){
+  header{padding:12px 16px}
+  .wrap{padding:20px 12px 60px}
+  .card{padding:16px 14px}
+  .row.r3,.row.r4{grid-template-columns:1fr 1fr}
+  .row.r2{grid-template-columns:1fr}
+  .btn-lg{width:100%;justify-content:center}
+  .car-entry{grid-template-columns:1fr 1fr}
+  .itin-day{grid-template-columns:54px 1fr auto}
+}
+</style>
 </head>
 <body>
 <header>
   <span class="logo">Sana <span>On The Go</span></span>
-  <span class="header-badge">Agent Tool · Private</span>
+  <span class="header-badge">Trip Estimate Tool · Private</span>
 </header>
 
-<div class="main-wrap">
-  <h1 class="page-title">Trip Cost Calculator</h1>
-  <p class="page-sub">Internal tool — calculate, review and export trip costing PDFs with full breakdowns.</p>
+<div class="wrap">
 
-  <!-- CARD 1: TRIP BASICS -->
-  <div class="card">
-    <div class="card-title">📋 Trip Basics</div>
-    <div class="card-sub">Set the trip name, duration and group composition.</div>
-    <div class="form-row two">
-      <div class="field"><label>Trip / Destination Name</label><input type="text" id="tripName" placeholder="e.g. Sikkim 4N/5D"></div>
-      <div class="field"><label>Client Name (optional)</label><input type="text" id="clientName" placeholder="e.g. Mr. Sharma & Family"></div>
-    </div>
-    <div class="form-row three" style="margin-top:14px">
-      <div class="field"><label>No. of Nights</label><input type="number" id="numNights" value="3" min="1" max="20" oninput="rebuildAll()"></div>
-      <div class="field"><label>No. of Adults</label><input type="number" id="numAdults" value="4" min="0" max="100" oninput="recalculate()"></div>
-      <div class="field"><label>No. of Rooms</label><input type="number" id="numRooms" value="2" min="1" max="50" oninput="recalculate()"></div>
-    </div>
-  </div>
+<!-- ═══════════════════════════════════════════
+     SECTION A — CLIENT & TRIP DETAILS
+════════════════════════════════════════════ -->
+<div class="section-heading">📋 Client & Trip Details</div>
 
-  <!-- CARD 2: CHILDREN -->
-  <div class="card">
-    <div class="card-title">👶 Children (Age-based Lodging Pricing)</div>
-    <div class="card-sub">Hotel/homestay charges depend on child age. Add each child separately.</div>
-    <div class="children-info-box">
-      <strong>Lodging Age Rules:</strong><br>
-      🟢 <strong>Below 3 years</strong> — No hotel/lodging charge (complimentary)<br>
-      🟡 <strong>3 to 6 years</strong> — Half the per-person lodging/combined rate<br>
-      🔵 <strong>Above 6 years</strong> — Full per-person rate (same as adult for hotel)
-    </div>
-    <div id="childrenList"></div>
-    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="addChild()">+ Add Child</button>
-    <p class="note">Food cost for children: enter adult food rates in the Food & Lodging table — adjust manually if children eat differently.</p>
-  </div>
-
-  <!-- CARD 3: FOOD & LODGING -->
-  <div class="card">
-    <div class="card-title">🍽️ Food & Lodging — Per Day Breakdown</div>
-    <div class="card-sub">Enter per-adult rates. Child lodging is auto-calculated based on age above. Days = Nights + 1.</div>
-    <div class="days-table-wrap">
-      <table class="days-table">
-        <thead>
-          <tr>
-            <th>Day</th>
-            <th>Food Only (₹/adult)</th>
-            <th>Lodging Only (₹/adult)</th>
-            <th>Food+Lodging Combined (₹/adult)</th>
-            <th>Use Combined?</th>
-            <th>Copy Forward</th>
-          </tr>
-        </thead>
-        <tbody id="daysTableBody"></tbody>
-      </table>
-    </div>
-    <p class="note">Check "Use Combined?" when a property bundles food & lodging. Use "Copy Forward" to apply the same rates to the next N days. Child lodging is auto-applied based on age rules.</p>
-  </div>
-
-  <!-- CARD 4: TRANSPORT (MULTI-CAR) -->
-  <div class="card">
-    <div class="card-title">🚗 Transport — Per Day (Multiple Vehicles)</div>
-    <div class="card-sub">Add one or more vehicles per day. E.g. one Bolero + one small car. Each vehicle has its own cost and route note.</div>
-    <div id="carDayBlocks"></div>
-  </div>
-
-  <!-- CARD 5: PROPERTIES -->
-  <div class="card">
-    <div class="card-title">🏨 Property Selector (B2B Rates)</div>
-    <div class="card-sub">Select properties used in this trip. B2B cost is added automatically. Skip if you've filled lodging manually above.</div>
-    <!--
-      ══ HOW TO EDIT PROPERTY B2B RATES ══
-      Scroll down to the PROPERTY_DATA array in the script section.
-      Change the b2bRate value for each property (cost per room per night, in ₹).
-      To add a new property, copy any existing line and change name/location/region/b2bRate.
-    -->
-    <div class="region-tabs" id="regionTabs"></div>
-    <div class="prop-grid" id="propGrid"></div>
-  </div>
-
-  <!-- CARD 6: EXTRAS -->
-  <div class="card">
-    <div class="card-title">➕ Extras & Miscellaneous</div>
-    <div class="card-sub">Permits, entry fees, guide charges, tips, etc.</div>
-    <div id="extrasList"></div>
-    <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addExtra()">+ Add Extra Item</button>
-  </div>
-
-  <!-- CARD 7: MARKUP -->
-  <div class="card">
-    <div class="card-title">📈 Markup & Profit</div>
-    <div class="card-sub">Apply a percentage markup over total base cost to get the selling price.</div>
-    <div class="markup-row">
-      <div class="field" style="min-width:160px">
-        <label>Markup %</label>
-        <input type="number" id="markupPct" value="15" min="0" max="500" oninput="recalculate()">
-      </div>
-      <div class="markup-result" id="markupResult">Selling Price: <strong>—</strong></div>
-    </div>
-  </div>
-
-  <!-- SUMMARY -->
-  <div class="summary-box">
-    <h2>Cost Summary</h2>
-    <div class="summary-grid" id="summaryGrid"></div>
-    <div class="sum-total">
-      <div>
-        <div class="label">Base Cost (Total)</div>
-        <div style="font-size:.82rem;color:rgba(255,255,255,.6)" id="perPersonCost"></div>
-      </div>
-      <div class="big" id="grandTotal">₹0</div>
-    </div>
-  </div>
-
-  <!-- DETAILED BREAKDOWN -->
-  <div class="card">
-    <div class="card-title">📊 Detailed Breakdown</div>
-    <table class="breakdown-table" id="breakdownTable"></table>
-  </div>
-
-  <!-- ACTIONS -->
-  <div class="btn-row">
-    <button class="btn btn-gold btn-lg" onclick="generatePDF()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-      Export PDF Quote
-    </button>
-    <button class="btn btn-primary btn-lg" onclick="recalculate()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Recalculate
-    </button>
-    <button class="btn btn-outline btn-lg" onclick="resetAll()">Reset All</button>
+<div class="card">
+  <div class="card-title">Client Information</div>
+  <div class="row r2">
+    <div class="field"><label>Client Name *</label><input type="text" id="clientName" placeholder="e.g. Mr. Ramesh Sharma & Family"></div>
+    <div class="field"><label>Client Phone / WhatsApp</label><input type="text" id="clientPhone" placeholder="+91 9800000000"></div>
   </div>
 </div>
 
+<div class="card">
+  <div class="card-title">Trip Information</div>
+  <div class="row r1">
+    <div class="field"><label>Trip / Package Name *</label><input type="text" id="tripName" placeholder="e.g. Offbeat Sikkim – 5N/6D"></div>
+  </div>
+  <div class="row r3" style="margin-top:12px">
+    <div class="field"><label>Trip Start Date *</label><input type="date" id="tripStart"></div>
+    <div class="field"><label>Trip End Date *</label><input type="date" id="tripEnd"></div>
+    <div class="field"><label>No. of Nights</label><input type="number" id="numNights" value="3" min="1" max="20" oninput="rebuildAll()"></div>
+  </div>
+  <div class="row r2" style="margin-top:12px">
+    <div class="field"><label>Places Covered</label><input type="text" id="placesCovered" placeholder="e.g. Gangtok, Lachung, Yumthang, Zuluk"></div>
+    <div class="field"><label>Pickup / Drop Point</label><input type="text" id="pickupDrop" placeholder="e.g. NJP Station / Bagdogra Airport"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Group Composition</div>
+  <div class="row r3">
+    <div class="field"><label>No. of Adults</label><input type="number" id="numAdults" value="4" min="0" max="100" oninput="recalculate()"></div>
+    <div class="field"><label>No. of Rooms</label><input type="number" id="numRooms" value="2" min="1" max="50" oninput="recalculate()"></div>
+    <div class="field"><label>Accommodation Type</label>
+      <select id="accomType">
+        <option>Hotel</option>
+        <option>Homestay</option>
+        <option>Resort</option>
+        <option>Mix of Hotel &amp; Homestay</option>
+        <option>Heritage Property</option>
+        <option>Eco Camp / Tent Stay</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION B — CHILDREN
+════════════════════════════════════════════ -->
+<div class="section-heading">👶 Children</div>
+<div class="card">
+  <div class="info-box">
+    <strong>Lodging Age Rules:</strong><br>
+    🟢 <strong>Below 3 yrs</strong> — No lodging charge &nbsp;|&nbsp;
+    🟡 <strong>3–6 yrs</strong> — Half lodging rate &nbsp;|&nbsp;
+    🔵 <strong>Above 6 yrs</strong> — Full rate
+  </div>
+  <div id="childrenList"></div>
+  <button class="btn-add-day" onclick="addChild()">+ Add Child</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION C — ITINERARY
+════════════════════════════════════════════ -->
+<div class="section-heading">🗺️ Day-by-Day Itinerary</div>
+<div class="card">
+  <div class="card-title">Add a description for each day — this appears in the PDF</div>
+  <div id="itinList"></div>
+  <button class="btn-add-day" onclick="addItinDay()">+ Add Day</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION D — INCLUSIONS & EXCLUSIONS
+════════════════════════════════════════════ -->
+<div class="section-heading">✅ Inclusions & Exclusions</div>
+<div class="card">
+  <div class="card-title">✅ Inclusions — tap to select</div>
+  <div class="chip-row" id="inclChips">
+    <span class="chip" data-type="incl">🏨 Accommodation</span>
+    <span class="chip" data-type="incl">🍳 Breakfast</span>
+    <span class="chip" data-type="incl">🍽️ Dinner</span>
+    <span class="chip" data-type="incl">🍱 All Meals</span>
+    <span class="chip" data-type="incl">🚗 All Transfers</span>
+    <span class="chip" data-type="incl">🎟️ Entry Fees</span>
+    <span class="chip" data-type="incl">🧭 Local Guide</span>
+    <span class="chip" data-type="incl">📋 Permits (ILP/PAP)</span>
+    <span class="chip" data-type="incl">🚂 Toy Train Joyride</span>
+    <span class="chip" data-type="incl">🏡 Homestay Meals</span>
+    <span class="chip" data-type="incl">🔥 Bonfire Evening</span>
+    <span class="chip" data-type="incl">📱 24/7 Support</span>
+  </div>
+  <div class="field">
+    <label>Custom Inclusions (one per line)</label>
+    <textarea id="customIncl" placeholder="Tea garden visit with tasting&#10;Complimentary room upgrade"></textarea>
+  </div>
+</div>
+
+<div class="card" style="margin-top:0">
+  <div class="card-title">❌ Exclusions — tap to select</div>
+  <div class="chip-row" id="exclChips">
+    <span class="chip" data-type="excl">✈️ Flights / Trains</span>
+    <span class="chip" data-type="excl">🍛 Lunch</span>
+    <span class="chip" data-type="excl">🛡️ Travel Insurance</span>
+    <span class="chip" data-type="excl">🛍️ Personal Expenses</span>
+    <span class="chip" data-type="excl">💊 Medical Expenses</span>
+    <span class="chip" data-type="excl">❄️ Snow Vehicle Charges</span>
+    <span class="chip" data-type="excl">🎭 Optional Activities</span>
+    <span class="chip" data-type="excl">🧗 Porter / Trekking Gear</span>
+  </div>
+  <div class="field">
+    <label>Custom Exclusions (one per line)</label>
+    <textarea id="customExcl" placeholder="GST if applicable&#10;Any cost due to road blockage"></textarea>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION E — COSTING (Internal)
+════════════════════════════════════════════ -->
+<div class="section-heading">💰 Costing (Internal — Not in PDF)</div>
+
+<!-- Food & Lodging -->
+<div class="card">
+  <div class="card-title">🍽️ Food & Lodging — Per Day</div>
+  <div class="dtable-wrap">
+    <table class="dtable">
+      <thead><tr>
+        <th>Day</th><th>Food (₹/adult)</th><th>Lodging (₹/adult)</th>
+        <th>Food+Lodge Combined (₹/adult)</th><th>Use Combined?</th><th>Copy Forward</th>
+      </tr></thead>
+      <tbody id="daysBody"></tbody>
+    </table>
+  </div>
+  <p class="hint">Check "Use Combined?" when a property bundles food & lodging. Child lodging auto-calculated from age rules.</p>
+</div>
+
+<!-- Transport -->
+<div class="card">
+  <div class="card-title">🚗 Transport — Per Day (Multiple Vehicles)</div>
+  <div id="carBlocks"></div>
+</div>
+
+<!-- Properties -->
+<div class="card">
+  <div class="card-title">🏨 Property Selector (B2B Rates)
+    <span style="font-size:.7rem;font-weight:400;color:var(--muted);margin-left:6px">Skip if lodging filled above</span>
+  </div>
+  <!--
+    ══ EDIT B2B PROPERTY RATES ══
+    Find PROPERTY_DATA in the <script> below.
+    Change b2bRate = your net cost per room per night in Rs.
+  -->
+  <div class="rtabs" id="rtabs"></div>
+  <div class="pgrid" id="pgrid"></div>
+</div>
+
+<!-- Extras -->
+<div class="card">
+  <div class="card-title">➕ Extras & Miscellaneous</div>
+  <div id="extrasList"></div>
+  <button class="btn-add-day" style="margin-top:8px" onclick="addExtra()">+ Add Extra</button>
+</div>
+
+<!-- Markup -->
+<div class="card">
+  <div class="card-title">📈 Markup</div>
+  <div class="markup-row">
+    <div class="field" style="min-width:150px"><label>Markup %</label>
+      <input type="number" id="markupPct" value="15" min="0" max="500" oninput="recalculate()">
+    </div>
+    <div class="markup-result" id="markupResult">Selling Price: <strong>—</strong></div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="sum-box">
+  <h3>Cost Summary</h3>
+  <div class="sum-grid" id="sumGrid"></div>
+  <div class="sum-total">
+    <div><div class="sl">Total Selling Price</div>
+      <div style="font-size:.8rem;color:rgba(255,255,255,.55);margin-top:2px" id="perHeadLine"></div>
+    </div>
+    <div class="sv" id="grandTotalDisplay">Rs.0</div>
+  </div>
+</div>
+
+<!-- Breakdown -->
+<div class="card">
+  <div class="card-title">📊 Internal Breakdown</div>
+  <table class="bktable" id="bkTable"></table>
+</div>
+
+<!-- ACTIONS -->
+<div class="btn-row" style="margin-top:20px">
+  <button class="btn btn-gold btn-lg" onclick="generatePDF()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    Generate Client PDF
+  </button>
+  <button class="btn btn-green btn-lg" onclick="recalculate()">Recalculate</button>
+  <button class="btn btn-out btn-lg" onclick="resetAll()">Reset All</button>
+</div>
+
+</div><!-- /wrap -->
+
 <script>
-// ══════════════════════════════════════════════════════════════════
-//  PROPERTY DATA — EDIT B2B RATES HERE
-//  b2bRate = your net cost per room per night in ₹ (B2B rate)
-//  To add a property: copy a line, change name/location/region/b2bRate
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// PROPERTY DATA — EDIT B2B RATES HERE
+// b2bRate = your net cost per room per night in Rs.
+// ══════════════════════════════════════════════════════════
 const PROPERTY_DATA = [
   // ── DARJEELING ──
-  { name:"Dekeling Hotel",          location:"Darjeeling",  region:"Darjeeling", b2bRate:2500 },
-  { name:"Mayfair Darjeeling",      location:"Darjeeling",  region:"Darjeeling", b2bRate:6500 },
-  { name:"Cedar Inn",               location:"Darjeeling",  region:"Darjeeling", b2bRate:3200 },
-  { name:"Elgin Hotel",             location:"Darjeeling",  region:"Darjeeling", b2bRate:5800 },
-  { name:"Cochrane Place",          location:"Darjeeling",  region:"Darjeeling", b2bRate:4200 },
-  { name:"Property 6 (Darjeeling)", location:"Darjeeling",  region:"Darjeeling", b2bRate:0    },
+  {name:"Dekeling Hotel",        loc:"Darjeeling", region:"Darjeeling", b2bRate:2500},
+  {name:"Mayfair Darjeeling",    loc:"Darjeeling", region:"Darjeeling", b2bRate:6500},
+  {name:"Cedar Inn",             loc:"Darjeeling", region:"Darjeeling", b2bRate:3200},
+  {name:"Elgin Hotel",           loc:"Darjeeling", region:"Darjeeling", b2bRate:5800},
+  {name:"Cochrane Place",        loc:"Darjeeling", region:"Darjeeling", b2bRate:4200},
+  {name:"Property 6 (Darj.)",    loc:"Darjeeling", region:"Darjeeling", b2bRate:0},
   // ── KALIMPONG ──
-  { name:"Himalayan Hotel",         location:"Kalimpong",   region:"Kalimpong",  b2bRate:3500 },
-  { name:"Silver Oaks",             location:"Kalimpong",   region:"Kalimpong",  b2bRate:4200 },
-  { name:"Kalimpong Park Hotel",    location:"Kalimpong",   region:"Kalimpong",  b2bRate:2800 },
-  { name:"Property 4 (Kalimpong)",  location:"Kalimpong",   region:"Kalimpong",  b2bRate:0    },
+  {name:"Himalayan Hotel",       loc:"Kalimpong",  region:"Kalimpong",  b2bRate:3500},
+  {name:"Silver Oaks",           loc:"Kalimpong",  region:"Kalimpong",  b2bRate:4200},
+  {name:"Kalimpong Park Hotel",  loc:"Kalimpong",  region:"Kalimpong",  b2bRate:2800},
+  {name:"Property 4 (Kalim.)",   loc:"Kalimpong",  region:"Kalimpong",  b2bRate:0},
   // ── SIKKIM ──
-  { name:"Mayfair Gangtok",         location:"Gangtok",     region:"Sikkim",     b2bRate:7000 },
-  { name:"Norkhill Hotel",          location:"Gangtok",     region:"Sikkim",     b2bRate:4500 },
-  { name:"Modern Central Hotel",    location:"Gangtok",     region:"Sikkim",     b2bRate:2600 },
-  { name:"The Elgin Mt Pandim",     location:"Pelling",     region:"Sikkim",     b2bRate:6000 },
-  { name:"Kabur Resort",            location:"Ravangla",    region:"Sikkim",     b2bRate:3200 },
-  { name:"Property 6 (Sikkim)",     location:"Sikkim",      region:"Sikkim",     b2bRate:0    },
-  // ── DOOARS / OFFBEAT ──
-  { name:"Jungle Camp Lataguri",    location:"Lataguri",    region:"Dooars",     b2bRate:3800 },
-  { name:"Gorumara Forest Stay",    location:"Gorumara",    region:"Dooars",     b2bRate:2900 },
-  { name:"Chalsa River Camp",       location:"Chalsa",      region:"Dooars",     b2bRate:2200 },
-  { name:"Bindu Eco Retreat",       location:"Bindu",       region:"Dooars",     b2bRate:3100 },
-  { name:"Property 5 (Dooars)",     location:"Dooars",      region:"Dooars",     b2bRate:0    },
-  { name:"Property 6 (Dooars)",     location:"Dooars",      region:"Dooars",     b2bRate:0    },
+  {name:"Mayfair Gangtok",       loc:"Gangtok",    region:"Sikkim",     b2bRate:7000},
+  {name:"Norkhill Hotel",        loc:"Gangtok",    region:"Sikkim",     b2bRate:4500},
+  {name:"Modern Central Hotel",  loc:"Gangtok",    region:"Sikkim",     b2bRate:2600},
+  {name:"The Elgin Mt Pandim",   loc:"Pelling",    region:"Sikkim",     b2bRate:6000},
+  {name:"Kabur Resort",          loc:"Ravangla",   region:"Sikkim",     b2bRate:3200},
+  {name:"Property 6 (Sikkim)",   loc:"Sikkim",     region:"Sikkim",     b2bRate:0},
+  // ── DOOARS ──
+  {name:"Jungle Camp Lataguri",  loc:"Lataguri",   region:"Dooars",     b2bRate:3800},
+  {name:"Gorumara Forest Stay",  loc:"Gorumara",   region:"Dooars",     b2bRate:2900},
+  {name:"Chalsa River Camp",     loc:"Chalsa",     region:"Dooars",     b2bRate:2200},
+  {name:"Bindu Eco Retreat",     loc:"Bindu",      region:"Dooars",     b2bRate:3100},
+  {name:"Property 5 (Dooars)",   loc:"Dooars",     region:"Dooars",     b2bRate:0},
+  {name:"Property 6 (Dooars)",   loc:"Dooars",     region:"Dooars",     b2bRate:0},
 ];
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 
-let selectedProperties = new Set();
-let extraCount = 0;
-let childCount = 0;
-let carEntryCount = {};   // { day: highestEntryId }
-let carEntryVisible = {}; // tracks which entry ids still exist per day
+let selProps = new Set();
+let extraCount = 0, childCount = 0, itinCount = 0;
+let carEntryCount = {}, carEntryVis = {};
 
-window.onload = function() {
-  buildRegionTabs();
-  buildPropGrid('All');
+window.onload = () => {
+  buildRegionTabs(); buildPropGrid('All');
   rebuildAll();
+  // bind chip clicks
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('on')));
+  // default date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tripStart').value = today;
 };
 
-function rebuildAll() {
-  rebuildDaysTable();
-  rebuildCarBlocks();
-  recalculate();
+function rebuildAll() { rebuildDaysTable(); rebuildCarBlocks(); recalculate(); }
+
+// ── ITINERARY ──────────────────────────────────────────────
+function addItinDay() {
+  itinCount++;
+  const id = itinCount;
+  const div = document.createElement('div');
+  div.className = 'itin-day'; div.id = `itin_${id}`;
+  div.innerHTML = `
+    <div class="itin-day-num">DAY<br>${id}</div>
+    <textarea id="itinText_${id}" placeholder="e.g. Arrive NJP, drive to Gangtok via Teesta Valley. Check-in at hotel. Evening stroll at MG Marg."></textarea>
+    <button class="btn-rm" onclick="removeItinDay(${id})" title="Remove">✕</button>`;
+  document.getElementById('itinList').appendChild(div);
 }
 
-// ─── CHILDREN ───────────────────────────────────────────────────
+function removeItinDay(id) {
+  document.getElementById(`itin_${id}`)?.remove();
+}
+
+// ── CHILDREN ──────────────────────────────────────────────
 function addChild() {
   childCount++;
   const id = childCount;
   const div = document.createElement('div');
-  div.id = `child_${id}`;
-  div.className = 'child-row';
+  div.id = `child_${id}`; div.className = 'child-row';
   div.innerHTML = `
-    <div class="field" style="min-width:140px">
-      <label>Child Name / Label</label>
-      <input type="text" id="childName_${id}" value="Child ${id}" placeholder="e.g. Child 1">
-    </div>
-    <div class="field" style="min-width:90px">
-      <label>Age (years)</label>
-      <input type="number" id="childAge_${id}" value="5" min="0" max="17" oninput="updateChildBadge(${id});recalculate()">
-    </div>
-    <div style="padding-bottom:8px" id="childBadge_${id}"></div>
-    <button class="btn btn-sm btn-danger" style="margin-bottom:8px" onclick="removeChild(${id})">✕ Remove</button>`;
+    <div class="field" style="min-width:130px"><label>Name / Label</label>
+      <input type="text" id="cName_${id}" value="Child ${id}"></div>
+    <div class="field" style="min-width:80px"><label>Age (yrs)</label>
+      <input type="number" id="cAge_${id}" value="5" min="0" max="17" oninput="updateAgeBadge(${id});recalculate()"></div>
+    <div style="padding-bottom:8px" id="cBadge_${id}"></div>
+    <button class="btn btn-sm btn-danger" style="margin-bottom:8px" onclick="removeChild(${id})">✕</button>`;
   document.getElementById('childrenList').appendChild(div);
-  updateChildBadge(id);
-  recalculate();
+  updateAgeBadge(id); recalculate();
 }
-
-function updateChildBadge(id) {
-  const age = parseInt(document.getElementById(`childAge_${id}`)?.value) || 0;
-  const b = document.getElementById(`childBadge_${id}`);
+function updateAgeBadge(id) {
+  const age = parseInt(document.getElementById(`cAge_${id}`)?.value)||0;
+  const b = document.getElementById(`cBadge_${id}`);
   if (!b) return;
-  if (age < 3)       b.innerHTML = `<span class="age-badge age-free">Under 3 yrs — Free lodging</span>`;
-  else if (age <= 6) b.innerHTML = `<span class="age-badge age-half">Age 3–6 — Half lodging rate</span>`;
-  else               b.innerHTML = `<span class="age-badge age-full">Age 7+ — Full lodging rate</span>`;
+  b.innerHTML = age<3
+    ? `<span class="age-badge age-free">Under 3 — Free</span>`
+    : age<=6
+      ? `<span class="age-badge age-half">Age 3–6 — Half rate</span>`
+      : `<span class="age-badge age-full">Age 7+ — Full rate</span>`;
 }
-
-function removeChild(id) {
-  document.getElementById(`child_${id}`)?.remove();
-  recalculate();
-}
-
+function removeChild(id) { document.getElementById(`child_${id}`)?.remove(); recalculate(); }
 function getChildMult(id) {
-  const age = parseInt(document.getElementById(`childAge_${id}`)?.value) || 0;
-  if (age < 3) return 0;
-  if (age <= 6) return 0.5;
-  return 1;
+  const age = parseInt(document.getElementById(`cAge_${id}`)?.value)||0;
+  return age<3 ? 0 : age<=6 ? 0.5 : 1;
 }
 
-// ─── DAYS TABLE ─────────────────────────────────────────────────
+// ── DAYS TABLE ─────────────────────────────────────────────
 function rebuildDaysTable() {
-  const nights = parseInt(document.getElementById('numNights').value) || 3;
-  const days = nights + 1;
+  const nights = parseInt(document.getElementById('numNights').value)||3;
+  const days = nights+1;
   let html = '';
-  for (let d = 1; d <= days; d++) {
-    const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
-    const maxCopy = days - d; // how many days after this one
-    const copyCtrl = maxCopy > 0
+  for (let d=1; d<=days; d++) {
+    const lbl = d===1 ? 'Day 1 (Arrival)' : d===days ? `Day ${d} (Dep.)` : `Day ${d}`;
+    const maxC = days-d;
+    const cfwd = maxC>0
       ? `<div style="display:flex;align-items:center;gap:5px;flex-wrap:nowrap">
-           <input type="number" id="copyQty_${d}" value="1" min="1" max="${maxCopy}"
-             style="width:46px;padding:4px 6px;font-size:.8rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
-           <button onclick="copyDayForward(${d})" class="copy-fwd-btn" title="Copy this day's rates to next N days">▶ Apply</button>
+           <input type="number" id="cfQty_${d}" value="1" min="1" max="${maxC}"
+             style="width:44px;padding:4px 6px;font-size:.78rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
+           <button class="cfwd-btn" onclick="copyDayFwd(${d})">▶ Apply</button>
          </div>`
-      : `<span style="font-size:.74rem;color:var(--muted)">Last day</span>`;
+      : `<span style="font-size:.72rem;color:var(--muted)">—</span>`;
     html += `<tr>
-      <td class="day-label">${lbl}</td>
+      <td class="dlabel">${lbl}</td>
       <td><input type="number" id="food_${d}" value="0" min="0" oninput="recalculate()"></td>
-      <td><input type="number" id="lodging_${d}" value="0" min="0" oninput="recalculate()"></td>
-      <td><input type="number" id="combined_${d}" value="0" min="0" oninput="recalculate()"></td>
-      <td style="text-align:center"><input type="checkbox" id="useCombined_${d}" onchange="recalculate()" style="width:auto;transform:scale(1.4)"></td>
-      <td>${copyCtrl}</td>
+      <td><input type="number" id="lodge_${d}" value="0" min="0" oninput="recalculate()"></td>
+      <td><input type="number" id="comb_${d}" value="0" min="0" oninput="recalculate()"></td>
+      <td style="text-align:center"><input type="checkbox" id="useComb_${d}" onchange="recalculate()" style="width:auto;transform:scale(1.3)"></td>
+      <td>${cfwd}</td>
     </tr>`;
   }
-  document.getElementById('daysTableBody').innerHTML = html;
+  document.getElementById('daysBody').innerHTML = html;
 }
 
-function copyDayForward(fromDay) {
-  const nights = parseInt(document.getElementById('numNights').value) || 3;
-  const days = nights + 1;
-  const qty = parseInt(document.getElementById(`copyQty_${fromDay}`)?.value) || 1;
-  const food     = document.getElementById(`food_${fromDay}`)?.value || '0';
-  const lodging  = document.getElementById(`lodging_${fromDay}`)?.value || '0';
-  const combined = document.getElementById(`combined_${fromDay}`)?.value || '0';
-  const useComb  = document.getElementById(`useCombined_${fromDay}`)?.checked || false;
-  const limit = Math.min(fromDay + qty, days);
-  for (let d = fromDay + 1; d <= limit; d++) {
-    const f = document.getElementById(`food_${d}`);
-    const l = document.getElementById(`lodging_${d}`);
-    const c = document.getElementById(`combined_${d}`);
-    const u = document.getElementById(`useCombined_${d}`);
-    if (f) f.value = food;
-    if (l) l.value = lodging;
-    if (c) c.value = combined;
-    if (u) u.checked = useComb;
+function copyDayFwd(from) {
+  const nights = parseInt(document.getElementById('numNights').value)||3;
+  const days = nights+1;
+  const qty = parseInt(document.getElementById(`cfQty_${from}`)?.value)||1;
+  const food = document.getElementById(`food_${from}`)?.value||'0';
+  const lodge = document.getElementById(`lodge_${from}`)?.value||'0';
+  const comb = document.getElementById(`comb_${from}`)?.value||'0';
+  const useC = document.getElementById(`useComb_${from}`)?.checked||false;
+  const lim = Math.min(from+qty, days);
+  for (let d=from+1; d<=lim; d++) {
+    const f=document.getElementById(`food_${d}`); if(f) f.value=food;
+    const l=document.getElementById(`lodge_${d}`); if(l) l.value=lodge;
+    const c=document.getElementById(`comb_${d}`); if(c) c.value=comb;
+    const u=document.getElementById(`useComb_${d}`); if(u) u.checked=useC;
   }
-  // Flash feedback
-  const btn = document.querySelector(`#daysTableBody tr:nth-child(${fromDay}) .copy-fwd-btn`);
-  if (btn) { btn.textContent = '✓ Done'; btn.style.background='var(--green-lt)'; setTimeout(()=>{ btn.textContent='▶ Apply'; btn.style.background=''; },1200); }
+  const btn = document.querySelector(`#daysBody tr:nth-child(${from}) .cfwd-btn`);
+  if (btn) { btn.textContent='✓'; btn.style.background='var(--green-lt)'; setTimeout(()=>{btn.textContent='▶ Apply';btn.style.background='';},1200); }
   recalculate();
 }
 
-// ─── CAR BLOCKS (MULTI-VEHICLE PER DAY) ─────────────────────────
+// ── CAR BLOCKS ─────────────────────────────────────────────
 function rebuildCarBlocks() {
-  const nights = parseInt(document.getElementById('numNights').value) || 3;
-  const days = nights + 1;
-  const container = document.getElementById('carDayBlocks');
-  container.innerHTML = '';
-  carEntryCount  = {};
-  carEntryVisible = {};
-  for (let d = 1; d <= days; d++) {
-    carEntryCount[d] = 1;
-    carEntryVisible[d] = new Set([1]);
-    const lbl = d === 1 ? 'Day 1 (Arrival)' : d === days ? `Day ${d} (Departure)` : `Day ${d}`;
-    const maxCopy = days - d;
-    const copyCtrl = maxCopy > 0
+  const nights = parseInt(document.getElementById('numNights').value)||3;
+  const days = nights+1;
+  const cont = document.getElementById('carBlocks');
+  cont.innerHTML = ''; carEntryCount={}; carEntryVis={};
+  for (let d=1; d<=days; d++) {
+    carEntryCount[d]=1; carEntryVis[d]=new Set([1]);
+    const lbl = d===1?'Day 1 (Arrival)':d===days?`Day ${d} (Dep.)`:`Day ${d}`;
+    const maxC = days-d;
+    const cfwd = maxC>0
       ? `<div style="display:flex;align-items:center;gap:5px">
-           <span style="font-size:.75rem;color:var(--muted);white-space:nowrap">Copy to next</span>
-           <input type="number" id="carCopyQty_${d}" value="1" min="1" max="${maxCopy}"
-             style="width:46px;padding:4px 6px;font-size:.8rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
-           <span style="font-size:.75rem;color:var(--muted)">day(s)</span>
-           <button class="copy-fwd-btn" onclick="copyCarForward(${d})" title="Copy vehicle entries to next N days">▶ Apply</button>
-         </div>`
-      : '';
-    const block = document.createElement('div');
-    block.className = 'car-day-block';
-    block.id = `carBlock_${d}`;
-    block.innerHTML = `
-      <div class="car-day-header">
-        <span class="car-day-title">🚗 ${lbl}</span>
+           <span style="font-size:.73rem;color:var(--muted);white-space:nowrap">Copy next</span>
+           <input type="number" id="carCfQty_${d}" value="1" min="1" max="${maxC}"
+             style="width:44px;padding:4px 6px;font-size:.78rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
+           <span style="font-size:.73rem;color:var(--muted)">day(s)</span>
+           <button class="cfwd-btn" onclick="copyCarFwd(${d})">▶ Apply</button>
+         </div>` : '';
+    const blk = document.createElement('div');
+    blk.className='car-block'; blk.id=`carBlk_${d}`;
+    blk.innerHTML = `
+      <div class="car-block-hdr">
+        <span class="car-block-title">🚗 ${lbl}</span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          ${copyCtrl}
-          <button class="btn btn-sm btn-outline" onclick="addCarEntry(${d})">+ Add Vehicle</button>
+          ${cfwd}
+          <button class="btn btn-sm btn-out" onclick="addCarEntry(${d})">+ Vehicle</button>
         </div>
       </div>
-      <div id="carEntries_${d}"></div>`;
-    container.appendChild(block);
-    appendCarEntry(d, 1);
+      <div id="carEnt_${d}"></div>`;
+    cont.appendChild(blk);
+    appendCarEntry(d,1);
   }
 }
 
-function appendCarEntry(day, entryId) {
-  const container = document.getElementById(`carEntries_${day}`);
-  if (!container) return;
+function appendCarEntry(day, eid) {
+  const cont = document.getElementById(`carEnt_${day}`);
+  if (!cont) return;
   const div = document.createElement('div');
-  div.className = 'car-entry';
-  div.id = `carEntry_${day}_${entryId}`;
-  const removeBtn = entryId > 1
-    ? `<button class="btn btn-sm btn-danger" onclick="removeCarEntry(${day},${entryId})">✕</button>`
+  div.className='car-entry'; div.id=`ce_${day}_${eid}`;
+  const rmBtn = eid>1
+    ? `<button class="btn btn-sm btn-danger" onclick="removeCarEntry(${day},${eid})">✕</button>`
     : `<div></div>`;
   div.innerHTML = `
-    <div class="field">
-      <label>Vehicle Type</label>
-      <select id="carType_${day}_${entryId}" style="padding:9px 12px;font-size:.88rem">
+    <div class="field"><label>Vehicle</label>
+      <select id="cType_${day}_${eid}">
         <option value="">— Select —</option>
         <option value="Bolero">Bolero</option>
         <option value="Swift">Swift</option>
       </select>
     </div>
-    <div class="field">
-      <label>Cost (₹)</label>
-      <input type="number" id="carCost_${day}_${entryId}" value="0" min="0" oninput="recalculate()">
-    </div>
-    <div class="field">
-      <label>Route / Note</label>
-      <input type="text" id="carNote_${day}_${entryId}" placeholder="e.g. NJP to Gangtok">
-    </div>
-    ${removeBtn}`;
-  container.appendChild(div);
+    <div class="field"><label>Cost (Rs.)</label>
+      <input type="number" id="cCost_${day}_${eid}" value="0" min="0" oninput="recalculate()"></div>
+    <div class="field"><label>Route / Note</label>
+      <input type="text" id="cNote_${day}_${eid}" placeholder="e.g. NJP to Gangtok"></div>
+    ${rmBtn}`;
+  cont.appendChild(div);
 }
 
 function addCarEntry(day) {
-  carEntryCount[day] = (carEntryCount[day] || 1) + 1;
-  const newId = carEntryCount[day];
-  carEntryVisible[day].add(newId);
-  appendCarEntry(day, newId);
-  recalculate();
+  carEntryCount[day]=(carEntryCount[day]||1)+1;
+  const nid=carEntryCount[day]; carEntryVis[day].add(nid);
+  appendCarEntry(day,nid); recalculate();
 }
-
-function removeCarEntry(day, entryId) {
-  document.getElementById(`carEntry_${day}_${entryId}`)?.remove();
-  carEntryVisible[day]?.delete(entryId);
-  recalculate();
+function removeCarEntry(day,eid) {
+  document.getElementById(`ce_${day}_${eid}`)?.remove();
+  carEntryVis[day]?.delete(eid); recalculate();
 }
-
-function copyCarForward(fromDay) {
-  const nights = parseInt(document.getElementById('numNights').value) || 3;
-  const days = nights + 1;
-  const qty = parseInt(document.getElementById(`carCopyQty_${fromDay}`)?.value) || 1;
-  const limit = Math.min(fromDay + qty, days);
-  // Collect source vehicles
-  const srcVehicles = [];
-  const visSet = carEntryVisible[fromDay] || new Set([1]);
-  visSet.forEach(e => {
-    const type = document.getElementById(`carType_${fromDay}_${e}`)?.value || '';
-    const cost = document.getElementById(`carCost_${fromDay}_${e}`)?.value || '0';
-    const note = document.getElementById(`carNote_${fromDay}_${e}`)?.value || '';
-    srcVehicles.push({ type, cost, note });
+function copyCarFwd(from) {
+  const nights=parseInt(document.getElementById('numNights').value)||3;
+  const days=nights+1;
+  const qty=parseInt(document.getElementById(`carCfQty_${from}`)?.value)||1;
+  const lim=Math.min(from+qty,days);
+  const src=[];
+  const vs=carEntryVis[from]||new Set([1]);
+  vs.forEach(e=>{
+    src.push({
+      type: document.getElementById(`cType_${from}_${e}`)?.value||'',
+      cost: document.getElementById(`cCost_${from}_${e}`)?.value||'0',
+      note: document.getElementById(`cNote_${from}_${e}`)?.value||''
+    });
   });
-  // Apply to target days
-  for (let d = fromDay + 1; d <= limit; d++) {
-    // Clear existing entries except entry 1
-    const oldVis = [...(carEntryVisible[d] || new Set([1]))];
-    oldVis.forEach(e => { if (e > 1) { document.getElementById(`carEntry_${d}_${e}`)?.remove(); carEntryVisible[d]?.delete(e); } });
-    carEntryCount[d] = 1;
-    // Fill entry 1 from first source vehicle
-    if (srcVehicles[0]) {
-      const t = document.getElementById(`carType_${d}_1`);
-      const c = document.getElementById(`carCost_${d}_1`);
-      const n = document.getElementById(`carNote_${d}_1`);
-      if (t) t.value = srcVehicles[0].type;
-      if (c) c.value = srcVehicles[0].cost;
-      if (n) n.value = srcVehicles[0].note;
+  for (let d=from+1; d<=lim; d++) {
+    const old=[...(carEntryVis[d]||new Set([1]))];
+    old.forEach(e=>{ if(e>1){document.getElementById(`ce_${d}_${e}`)?.remove();carEntryVis[d]?.delete(e);} });
+    carEntryCount[d]=1;
+    if(src[0]){
+      const t=document.getElementById(`cType_${d}_1`); if(t) t.value=src[0].type;
+      const c=document.getElementById(`cCost_${d}_1`); if(c) c.value=src[0].cost;
+      const n=document.getElementById(`cNote_${d}_1`); if(n) n.value=src[0].note;
     }
-    // Add additional vehicles if source had more
-    for (let i = 1; i < srcVehicles.length; i++) {
-      carEntryCount[d]++;
-      const newId = carEntryCount[d];
-      carEntryVisible[d].add(newId);
-      appendCarEntry(d, newId);
-      const t = document.getElementById(`carType_${d}_${newId}`);
-      const c = document.getElementById(`carCost_${d}_${newId}`);
-      const n = document.getElementById(`carNote_${d}_${newId}`);
-      if (t) t.value = srcVehicles[i].type;
-      if (c) c.value = srcVehicles[i].cost;
-      if (n) n.value = srcVehicles[i].note;
+    for(let i=1;i<src.length;i++){
+      carEntryCount[d]++; const nid=carEntryCount[d];
+      carEntryVis[d].add(nid); appendCarEntry(d,nid);
+      const t=document.getElementById(`cType_${d}_${nid}`); if(t) t.value=src[i].type;
+      const c=document.getElementById(`cCost_${d}_${nid}`); if(c) c.value=src[i].cost;
+      const n=document.getElementById(`cNote_${d}_${nid}`); if(n) n.value=src[i].note;
     }
   }
-  // Flash feedback
-  const btn = document.querySelector(`#carBlock_${fromDay} .copy-fwd-btn`);
-  if (btn) { btn.textContent = '✓ Done'; btn.style.background='var(--green-lt)'; setTimeout(()=>{ btn.textContent='▶ Apply'; btn.style.background=''; },1200); }
+  const btn=document.querySelector(`#carBlk_${from} .cfwd-btn`);
+  if(btn){btn.textContent='✓';btn.style.background='var(--green-lt)';setTimeout(()=>{btn.textContent='▶ Apply';btn.style.background='';},1200);}
   recalculate();
 }
 
-// ─── PROPERTIES ─────────────────────────────────────────────────
+// ── PROPERTIES ─────────────────────────────────────────────
 function buildRegionTabs() {
-  const regions = ['All', ...new Set(PROPERTY_DATA.map(p => p.region))];
-  document.getElementById('regionTabs').innerHTML = regions.map(r =>
-    `<button class="rtab ${r==='All'?'active':''}" onclick="filterRegion(this,'${r}')">${r}</button>`
+  const regions=['All',...new Set(PROPERTY_DATA.map(p=>p.region))];
+  document.getElementById('rtabs').innerHTML=regions.map(r=>
+    `<button class="rtab ${r==='All'?'on':''}" onclick="filterRegion(this,'${r}')">${r}</button>`
   ).join('');
 }
-
-function filterRegion(el, region) {
-  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  buildPropGrid(region);
+function filterRegion(el,region) {
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on'); buildPropGrid(region);
 }
-
 function buildPropGrid(region) {
-  const list = region === 'All' ? PROPERTY_DATA : PROPERTY_DATA.filter(p => p.region === region);
-  document.getElementById('propGrid').innerHTML = list.map(p => {
-    const idx = PROPERTY_DATA.indexOf(p);
-    const sel = selectedProperties.has(idx);
-    return `<div class="prop-card ${sel?'selected':''}" onclick="toggleProp(${idx},this)">
-      <div class="prop-region-label">${p.region}</div>
-      <div class="prop-name">${p.name}</div>
-      <div class="prop-location">📍 ${p.location}</div>
-      <div class="prop-rate">B2B: <strong>${p.b2bRate > 0 ? 'Rs.'+p.b2bRate.toLocaleString('en-IN')+'/room/night' : 'Rate not set'}</strong></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-        <label style="font-size:.72rem;color:var(--muted);white-space:nowrap">Nights used:</label>
-        <input type="number" id="propNights_${idx}" value="1" min="1" max="20"
-          style="width:60px;font-size:.82rem;padding:4px 7px"
+  const list=region==='All'?PROPERTY_DATA:PROPERTY_DATA.filter(p=>p.region===region);
+  document.getElementById('pgrid').innerHTML=list.map(p=>{
+    const idx=PROPERTY_DATA.indexOf(p); const sel=selProps.has(idx);
+    return `<div class="pcard ${sel?'on':''}" onclick="toggleProp(${idx},this)">
+      <div class="pregion">${p.region}</div>
+      <div class="pname">${p.name}</div>
+      <div class="ploc">📍 ${p.loc}</div>
+      <div class="prate">B2B: <strong>${p.b2bRate>0?'Rs.'+p.b2bRate.toLocaleString('en-IN')+'/rm/nt':'Rate not set'}</strong></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+        <label style="font-size:.7rem;color:var(--muted);white-space:nowrap">Nights:</label>
+        <input type="number" id="pNights_${idx}" value="1" min="1" max="20"
+          style="width:55px;font-size:.8rem;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8"
           onclick="event.stopPropagation()" oninput="recalculate()">
       </div>
     </div>`;
   }).join('');
 }
-
-function toggleProp(idx, el) {
-  if (selectedProperties.has(idx)) { selectedProperties.delete(idx); el.classList.remove('selected'); }
-  else { selectedProperties.add(idx); el.classList.add('selected'); }
+function toggleProp(idx,el) {
+  if(selProps.has(idx)){selProps.delete(idx);el.classList.remove('on');}
+  else{selProps.add(idx);el.classList.add('on');}
   recalculate();
 }
 
-// ─── EXTRAS ─────────────────────────────────────────────────────
+// ── EXTRAS ─────────────────────────────────────────────────
 function addExtra() {
   extraCount++;
-  const id = extraCount;
-  const div = document.createElement('div');
-  div.id = `extra_${id}`;
-  div.style.cssText = 'display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap';
-  div.innerHTML = `
-    <div class="field" style="flex:2;min-width:180px"><label>Description</label><input type="text" id="extraDesc_${id}" placeholder="e.g. Nathu La Permit"></div>
-    <div class="field" style="flex:1;min-width:120px"><label>Amount (Rs.)</label><input type="number" id="extraAmt_${id}" value="0" min="0" oninput="recalculate()"></div>
+  const id=extraCount;
+  const div=document.createElement('div');
+  div.id=`ext_${id}`;
+  div.style.cssText='display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap';
+  div.innerHTML=`
+    <div class="field" style="flex:2;min-width:170px"><label>Description</label>
+      <input type="text" id="extDesc_${id}" placeholder="e.g. Nathu La Permit"></div>
+    <div class="field" style="flex:1;min-width:110px"><label>Amount (Rs.)</label>
+      <input type="number" id="extAmt_${id}" value="0" min="0" oninput="recalculate()"></div>
     <button class="btn btn-sm btn-danger" style="margin-bottom:2px" onclick="removeExtra(${id})">✕</button>`;
   document.getElementById('extrasList').appendChild(div);
 }
+function removeExtra(id) { document.getElementById(`ext_${id}`)?.remove(); recalculate(); }
 
-function removeExtra(id) {
-  document.getElementById(`extra_${id}`)?.remove();
-  recalculate();
-}
-
-// ─── MAIN CALCULATE ─────────────────────────────────────────────
+// ── MAIN CALCULATE ──────────────────────────────────────────
 function recalculate() {
-  const nights = parseInt(document.getElementById('numNights').value) || 3;
-  const days   = nights + 1;
-  const adults = parseInt(document.getElementById('numAdults').value) || 0;
-  const rooms  = parseInt(document.getElementById('numRooms').value) || 1;
-  const markupPct = parseFloat(document.getElementById('markupPct').value) || 0;
+  const nights=parseInt(document.getElementById('numNights').value)||3;
+  const days=nights+1;
+  const adults=parseInt(document.getElementById('numAdults').value)||0;
+  const rooms=parseInt(document.getElementById('numRooms').value)||1;
+  const markupPct=parseFloat(document.getElementById('markupPct').value)||0;
 
-  // Collect children
-  const children = [];
-  for (let i = 1; i <= childCount; i++) {
-    if (!document.getElementById(`child_${i}`)) continue;
-    const age  = parseInt(document.getElementById(`childAge_${i}`)?.value) || 0;
-    const name = document.getElementById(`childName_${i}`)?.value || `Child ${i}`;
-    const mult = getChildMult(i);
-    children.push({ id: i, name, age, mult });
+  // children
+  const children=[];
+  for(let i=1;i<=childCount;i++){
+    if(!document.getElementById(`child_${i}`)) continue;
+    const age=parseInt(document.getElementById(`cAge_${i}`)?.value)||0;
+    const name=document.getElementById(`cName_${i}`)?.value||`Child ${i}`;
+    children.push({id:i,name,age,mult:getChildMult(i)});
   }
-  const totalPersons = adults + children.length;
+  const totalPax=adults+children.length;
 
-  // Food & Lodging
-  let totalFood = 0, totalAdultLodging = 0, totalChildLodging = 0;
-  const dayRows = [];
-  for (let d = 1; d <= days; d++) {
-    const food     = parseFloat(document.getElementById(`food_${d}`)?.value) || 0;
-    const lodging  = parseFloat(document.getElementById(`lodging_${d}`)?.value) || 0;
-    const combined = parseFloat(document.getElementById(`combined_${d}`)?.value) || 0;
-    const useComb  = document.getElementById(`useCombined_${d}`)?.checked;
-
-    let dayFood = 0, dayAdultLodge = 0, dayChildLodge = 0;
-    if (useComb && combined > 0) {
-      dayFood = combined * adults;
-      // For children: apply their multiplier to the combined rate (lodging portion proxy)
-      children.forEach(c => { dayChildLodge += combined * c.mult; });
+  // food & lodging
+  let totFood=0,totAdultLodge=0,totChildLodge=0;
+  const dayRows=[];
+  for(let d=1;d<=days;d++){
+    const food=parseFloat(document.getElementById(`food_${d}`)?.value)||0;
+    const lodge=parseFloat(document.getElementById(`lodge_${d}`)?.value)||0;
+    const comb=parseFloat(document.getElementById(`comb_${d}`)?.value)||0;
+    const useC=document.getElementById(`useComb_${d}`)?.checked;
+    let dFood=0,dLodge=0,dCLodge=0;
+    if(useC&&comb>0){
+      dFood=comb*adults;
+      children.forEach(c=>{dCLodge+=comb*c.mult;});
     } else {
-      dayFood = food * adults;
-      dayAdultLodge = lodging * adults;
-      children.forEach(c => { dayChildLodge += lodging * c.mult; });
+      dFood=food*adults; dLodge=lodge*adults;
+      children.forEach(c=>{dCLodge+=lodge*c.mult;});
     }
-    totalFood         += dayFood;
-    totalAdultLodging += dayAdultLodge;
-    totalChildLodging += dayChildLodge;
-    dayRows.push({ day: d, food: dayFood, lodging: dayAdultLodge,
-                   combined: useComb && combined > 0 ? combined * adults : 0,
-                   childLodging: dayChildLodge });
+    totFood+=dFood; totAdultLodge+=dLodge; totChildLodge+=dCLodge;
+    dayRows.push({day:d,food:dFood,lodge:dLodge,comb:useC&&comb>0?comb*adults:0,cLodge:dCLodge});
   }
 
-  // Cars
-  let totalCar = 0;
-  const carRows = [];
-  for (let d = 1; d <= days; d++) {
-    const visSet = carEntryVisible[d] || new Set([1]);
-    let dayTotal = 0;
-    const vehicles = [];
-    visSet.forEach(e => {
-      const cost = parseFloat(document.getElementById(`carCost_${d}_${e}`)?.value) || 0;
-      const type = document.getElementById(`carType_${d}_${e}`)?.value || '';
-      const note = document.getElementById(`carNote_${d}_${e}`)?.value || '';
-      dayTotal += cost;
-      if (cost > 0 || type) vehicles.push({ type, cost, note });
+  // cars
+  let totCar=0; const carRows=[];
+  for(let d=1;d<=days;d++){
+    const vs=carEntryVis[d]||new Set([1]);
+    let dayTot=0; const vehs=[];
+    vs.forEach(e=>{
+      const cost=parseFloat(document.getElementById(`cCost_${d}_${e}`)?.value)||0;
+      const type=document.getElementById(`cType_${d}_${e}`)?.value||'';
+      const note=document.getElementById(`cNote_${d}_${e}`)?.value||'';
+      dayTot+=cost;
+      if(cost>0||type) vehs.push({type,cost,note});
     });
-    totalCar += dayTotal;
-    if (vehicles.length > 0) carRows.push({ day: d, vehicles, dayTotal });
+    totCar+=dayTot;
+    if(vehs.length>0) carRows.push({day:d,vehs,dayTot});
   }
 
-  // Properties
-  let totalProp = 0;
-  const propRows = [];
-  selectedProperties.forEach(idx => {
-    const p = PROPERTY_DATA[idx];
-    const n = parseInt(document.getElementById(`propNights_${idx}`)?.value) || 1;
-    const cost = p.b2bRate * rooms * n;
-    totalProp += cost;
-    propRows.push({ name: p.name, rate: p.b2bRate, rooms, nights: n, total: cost });
+  // properties
+  let totProp=0; const propRows=[];
+  selProps.forEach(idx=>{
+    const p=PROPERTY_DATA[idx];
+    const n=parseInt(document.getElementById(`pNights_${idx}`)?.value)||1;
+    const cost=p.b2bRate*rooms*n;
+    totProp+=cost;
+    propRows.push({name:p.name,rate:p.b2bRate,rooms,nights:n,total:cost});
   });
 
-  // Extras
-  let totalExtras = 0;
-  const extraRows = [];
-  for (let i = 1; i <= extraCount; i++) {
-    if (!document.getElementById(`extra_${i}`)) continue;
-    const desc = document.getElementById(`extraDesc_${i}`)?.value || 'Extra';
-    const amt  = parseFloat(document.getElementById(`extraAmt_${i}`)?.value) || 0;
-    totalExtras += amt;
-    extraRows.push({ desc, amt });
+  // extras
+  let totExtras=0; const extraRows=[];
+  for(let i=1;i<=extraCount;i++){
+    if(!document.getElementById(`ext_${i}`)) continue;
+    const desc=document.getElementById(`extDesc_${i}`)?.value||'Extra';
+    const amt=parseFloat(document.getElementById(`extAmt_${i}`)?.value)||0;
+    totExtras+=amt; extraRows.push({desc,amt});
   }
 
-  const grandTotal   = totalFood + totalAdultLodging + totalChildLodging + totalCar + totalProp + totalExtras;
-  const sellingPrice = grandTotal * (1 + markupPct / 100);
-  const perPerson    = totalPersons > 0 ? grandTotal / totalPersons : 0;
+  const base=totFood+totAdultLodge+totChildLodge+totCar+totProp+totExtras;
+  const selling=base*(1+markupPct/100);
+  const perHead=totalPax>0?selling/totalPax:0;
 
-  // Summary
-  document.getElementById('summaryGrid').innerHTML = [
-    { label:'Food (Adults)',       value: fmt(totalFood) },
-    { label:'Lodging (Adults)',    value: fmt(totalAdultLodging) },
-    { label:'Children Lodging',   value: fmt(totalChildLodging) },
-    { label:'Transport',          value: fmt(totalCar) },
-    { label:'Properties (B2B)',   value: fmt(totalProp) },
-    { label:'Extras',             value: fmt(totalExtras) },
-    { label:`Markup (${markupPct}%)`, value: fmt(sellingPrice - grandTotal) },
-  ].map(x => `<div class="sum-item"><div class="label">${x.label}</div><div class="value">${x.value}</div></div>`).join('');
+  // update summary
+  document.getElementById('sumGrid').innerHTML=[
+    {l:'Food (Adults)',v:rf(totFood)},
+    {l:'Lodging (Adults)',v:rf(totAdultLodge)},
+    {l:'Children Lodging',v:rf(totChildLodge)},
+    {l:'Transport',v:rf(totCar)},
+    {l:'Properties',v:rf(totProp)},
+    {l:'Extras',v:rf(totExtras)},
+    {l:`Markup (${markupPct}%)`,v:rf(selling-base)},
+  ].map(x=>`<div class="sum-item"><div class="sl">${x.l}</div><div class="sv">${x.v}</div></div>`).join('');
+  document.getElementById('grandTotalDisplay').textContent=rf(selling);
+  document.getElementById('perHeadLine').textContent=`${totalPax} pax — ${rf(perHead)} / head`;
+  document.getElementById('markupResult').innerHTML=`Selling Price: <strong>${rf(selling)}</strong> &nbsp;|&nbsp; Profit: <strong style="color:var(--gold-dk)">${rf(selling-base)}</strong>`;
 
-  document.getElementById('grandTotal').textContent = fmt(grandTotal);
-  document.getElementById('perPersonCost').textContent =
-    `${adults} adult${adults!==1?'s':''} + ${children.length} child${children.length!==1?'ren':''} | ≈ ${fmt(perPerson)} / person`;
-  document.getElementById('markupResult').innerHTML =
-    `Selling Price: <strong>${fmt(sellingPrice)}</strong> &nbsp;|&nbsp; Profit: <strong style="color:var(--gold-dk)">${fmt(sellingPrice - grandTotal)}</strong>`;
+  buildBreakdown(dayRows,carRows,propRows,extraRows,children,adults,
+    totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,base,selling,markupPct);
 
-  buildBreakdown(dayRows, carRows, propRows, extraRows, children, adults,
-    totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
-    grandTotal, sellingPrice, markupPct);
-
-  window._calcData = {
-    nights, days, adults, children, rooms, markupPct, totalPersons,
-    totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
-    grandTotal, sellingPrice, perPerson, dayRows, carRows, propRows, extraRows
-  };
+  window._cd={nights,days,adults,children,rooms,markupPct,totalPax,
+    totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,
+    base,selling,perHead,dayRows,carRows,propRows,extraRows};
 }
 
-// ─── BREAKDOWN TABLE ────────────────────────────────────────────
-function buildBreakdown(dayRows, carRows, propRows, extraRows, children, adults,
-  totalFood, totalAdultLodging, totalChildLodging, totalCar, totalProp, totalExtras,
-  grandTotal, sellingPrice, markupPct) {
-
-  const tbl = document.getElementById('breakdownTable');
-  const row = (lbl, amt, cls='') =>
-    `<tr class="${cls}"><td class="lbl">${lbl}</td><td class="amt">${amt===''?'':fmt(amt)}</td></tr>`;
-  const sec = t =>
-    `<tr class="subtotal"><td colspan="2" class="lbl" style="font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;padding-top:14px;color:var(--muted)">${t}</td></tr>`;
-
-  let html = sec('Food & Lodging — Adults');
-  dayRows.forEach(r => {
-    if (r.combined > 0) html += row(`Day ${r.day} — Combined Food+Lodge (${adults} adults)`, r.combined);
-    else {
-      if (r.food > 0)    html += row(`Day ${r.day} — Food (${adults} adults)`, r.food);
-      if (r.lodging > 0) html += row(`Day ${r.day} — Lodging (${adults} adults)`, r.lodging);
-    }
+function buildBreakdown(dayRows,carRows,propRows,extraRows,children,adults,
+  totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,base,selling,mkp){
+  const tbl=document.getElementById('bkTable');
+  const row=(l,a,c='')=>`<tr class="${c}"><td class="bl">${l}</td><td class="ba">${a===''?'':rf(a)}</td></tr>`;
+  const sec=t=>`<tr class="bs"><td colspan="2" class="bl" style="font-size:.7rem;letter-spacing:1px;text-transform:uppercase;padding-top:12px">${t}</td></tr>`;
+  let h='';
+  h+=sec('Food & Lodging — Adults');
+  dayRows.forEach(r=>{
+    if(r.comb>0) h+=row(`Day ${r.day} Combined (${adults}a)`,r.comb);
+    else{ if(r.food>0)h+=row(`Day ${r.day} Food (${adults}a)`,r.food); if(r.lodge>0)h+=row(`Day ${r.day} Lodging (${adults}a)`,r.lodge); }
   });
-  html += row('Adult Food + Lodging Subtotal', totalFood + totalAdultLodging, 'subtotal');
-
-  if (children.length > 0) {
-    html += sec('Children Lodging (Age-rated)');
-    children.forEach(c => {
-      const tag = c.mult === 0 ? 'Free — under 3 yrs' : c.mult === 0.5 ? 'Half rate — age 3 to 6' : 'Full rate — age 7+';
-      html += row(`${c.name} (Age ${c.age}) — ${tag}`, '');
+  h+=row('Adult Food+Lodge Subtotal',totFood+totAdultLodge,'bs');
+  if(children.length>0){
+    h+=sec('Children Lodging');
+    children.forEach(c=>{ const t=c.mult===0?'Free':c.mult===.5?'Half':'Full'; h+=row(`${c.name} (Age ${c.age}) — ${t}`,'' ); });
+    dayRows.forEach(r=>{ if(r.cLodge>0)h+=row(`Day ${r.day} Children Lodging`,r.cLodge); });
+    h+=row('Children Lodging Subtotal',totChildLodge,'bs');
+  }
+  if(carRows.length>0){
+    h+=sec('Transport');
+    carRows.forEach(r=>{
+      r.vehs.forEach(v=>h+=row(`Day ${r.day}${v.type?' — '+v.type:''}${v.note?' ('+v.note+')':''}`,v.cost));
+      if(r.vehs.length>1) h+=row(`Day ${r.day} Subtotal`,r.dayTot,'bs');
     });
-    dayRows.forEach(r => { if (r.childLodging > 0) html += row(`Day ${r.day} — Children Lodging`, r.childLodging); });
-    html += row('Children Lodging Subtotal', totalChildLodging, 'subtotal');
+    h+=row('Transport Total',totCar,'bs');
   }
-
-  if (carRows.length > 0) {
-    html += sec('Transport');
-    carRows.forEach(r => {
-      r.vehicles.forEach(v => html += row(`Day ${r.day}${v.type?' — '+v.type:''}${v.note?' ('+v.note+')':''}`, v.cost));
-      if (r.vehicles.length > 1) html += row(`Day ${r.day} — All Vehicles Subtotal`, r.dayTotal, 'subtotal');
-    });
-    html += row('Transport Total', totalCar, 'subtotal');
+  if(propRows.length>0){
+    h+=sec('Properties (B2B)');
+    propRows.forEach(r=>h+=row(`${r.name} ${r.rooms}rm×${r.nights}nt @ Rs.${r.rate}`,r.total));
+    h+=row('Properties Subtotal',totProp,'bs');
   }
-
-  if (propRows.length > 0) {
-    html += sec('Properties (B2B Rates)');
-    propRows.forEach(r => html += row(`${r.name} — ${r.rooms} room(s) x ${r.nights} night(s) @ Rs.${r.rate}`, r.total));
-    html += row('Properties Subtotal', totalProp, 'subtotal');
+  if(extraRows.length>0){
+    h+=sec('Extras');
+    extraRows.forEach(r=>h+=row(r.desc,r.amt));
+    h+=row('Extras Subtotal',totExtras,'bs');
   }
-
-  if (extraRows.length > 0) {
-    html += sec('Extras & Miscellaneous');
-    extraRows.forEach(r => html += row(r.desc, r.amt));
-    html += row('Extras Subtotal', totalExtras, 'subtotal');
-  }
-
-  html += `<tr class="subtotal"><td class="lbl" style="font-weight:800;font-size:.95rem;color:var(--green-dk)">GRAND TOTAL (Base Cost)</td>
-            <td class="amt" style="font-size:1rem;color:var(--green-dk)">${fmt(grandTotal)}</td></tr>`;
-  html += `<tr class="subtotal"><td class="lbl" style="font-weight:800;font-size:.95rem;color:var(--gold-dk)">SELLING PRICE (+${markupPct}% Markup)</td>
-            <td class="amt" style="font-size:1rem;color:var(--gold-dk)">${fmt(sellingPrice)}</td></tr>`;
-  tbl.innerHTML = html;
+  h+=`<tr class="bs"><td class="bl" style="font-weight:800;font-size:.93rem;color:var(--green-dk)">BASE COST</td><td class="ba" style="font-size:.93rem;color:var(--green-dk)">${rf(base)}</td></tr>`;
+  h+=`<tr class="bs"><td class="bl" style="font-weight:800;font-size:.93rem;color:var(--gold-dk)">SELLING PRICE (+${mkp}%)</td><td class="ba" style="font-size:.93rem;color:var(--gold-dk)">${rf(selling)}</td></tr>`;
+  tbl.innerHTML=h;
 }
 
-function fmt(n) {
-  if (n === '' || n === undefined || n === null) return '';
-  return 'Rs.' + Math.round(n).toLocaleString('en-IN');
-}
+function rf(n){ return 'Rs.'+Math.round(n).toLocaleString('en-IN'); }
 
-// ─── PDF GENERATION ─────────────────────────────────────────────
-// Uses LANDSCAPE A4 (297 x 210 mm) — eliminates column truncation
-// Two-column layout: Food/Children left, Transport/Props/Extras right
-// ────────────────────────────────────────────────────────────────
-function generatePDF() {
-  if (!window._calcData) recalculate();
-  const d = window._calcData;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  const W = 297, H = 210, M = 14;
-  let y = 0;
-
-  // ── HEADER BAND ──
-  doc.setFillColor(26, 61, 43);
-  doc.rect(0, 0, W, 28, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(17);
-  doc.setTextColor(255, 255, 255);
-  doc.text('SANA ON THE GO', M, 11);
-
-  doc.setFontSize(7);
-  doc.setTextColor(232, 201, 122);
-  doc.text('INTO THE WILD TOUR AND TRAVELS', M, 17);
-
-  doc.setFontSize(7);
-  doc.setTextColor(185, 220, 200);
-  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com  |  @sana.onthe.go', M, 23);
-
-  // right side
-  const tripName   = document.getElementById('tripName').value   || 'Trip Cost Estimate';
-  const clientName = document.getElementById('clientName').value || '';
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 255, 255);
-  doc.text(tripName, W - M, 10, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(195, 220, 208);
-  if (clientName) doc.text('Client: ' + clientName, W - M, 16, { align: 'right' });
-  doc.text('Date: ' + new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }),
-    W - M, clientName ? 22 : 16, { align: 'right' });
-
-  doc.setDrawColor(201, 168, 76);
-  doc.setLineWidth(0.5);
-  doc.line(0, 28, W, 28);
-
-  y = 35;
-
-  // ── STATS STRIP ──
-  const stats = [
-    ['Duration',     `${d.nights}N / ${d.nights+1}D`],
-    ['Adults',       String(d.adults)],
-    ['Children',     String(d.children.length)],
-    ['Rooms',        String(d.rooms)],
-    ['Per Person',   fmtP(d.perPerson)],
-    ['Base Cost',    fmtP(d.grandTotal)],
-    ['Selling Price',fmtP(d.sellingPrice)],
-  ];
-  const sw = (W - M * 2) / stats.length;
-  doc.setFillColor(40, 95, 65);
-  doc.roundedRect(M, y - 4, W - M * 2, 18, 2, 2, 'F');
-  stats.forEach((s, i) => {
-    const cx = M + i * sw + sw / 2;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(170, 215, 185);
-    doc.text(s[0], cx, y + 1.5, { align: 'center' });
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
-    doc.text(s[1], cx, y + 9, { align: 'center' });
-  });
-  y += 19;
-
-  // ── TWO-COLUMN LAYOUT ──
-  const colW = (W - M * 2 - 6) / 2;
-  const col1 = M;
-  const col2 = M + colW + 6;
-  const secSt = { fillColor:[237,245,240], fontStyle:'bold', textColor:[20,55,36], fontSize:7.5 };
-
-  // LEFT: Food & Lodging + Children
-  let y1 = y;
-  const flRows = [];
-  flRows.push([{ content:'FOOD & LODGING — ADULTS', colSpan:3, styles:secSt }]);
-  d.dayRows.forEach(r => {
-    if (r.combined > 0) flRows.push([`Day ${r.day} Combined (Food+Lodge)`, `${d.adults} adults`, fmtP(r.combined)]);
-    else {
-      if (r.food > 0)    flRows.push([`Day ${r.day} Food`,    `${d.adults} adults`, fmtP(r.food)]);
-      if (r.lodging > 0) flRows.push([`Day ${r.day} Lodging`, `${d.adults} adults`, fmtP(r.lodging)]);
-    }
-  });
-  flRows.push([{ content:'Adults Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
-               { content:fmtP(d.totalFood + d.totalAdultLodging), styles:{fontStyle:'bold',halign:'right'} }]);
-
-  if (d.children.length > 0) {
-    flRows.push([{ content:'CHILDREN LODGING', colSpan:3, styles:secSt }]);
-    d.children.forEach(c => {
-      const tag = c.mult===0 ? 'Free (under 3)' : c.mult===0.5 ? 'Half rate (3-6 yrs)' : 'Full rate (7+)';
-      flRows.push([`${c.name} — Age ${c.age}`, tag, '']);
-    });
-    d.dayRows.forEach(r => {
-      if (r.childLodging > 0) flRows.push([`Day ${r.day} Children Lodging`, '', fmtP(r.childLodging)]);
-    });
-    flRows.push([{ content:'Children Lodging Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
-                 { content:fmtP(d.totalChildLodging), styles:{fontStyle:'bold',halign:'right'} }]);
-  }
-
-  doc.autoTable({
-    startY: y1,
-    head: [['Item', 'Details', 'Amount']],
-    body: flRows,
-    tableWidth: colW,
-    margin: { left: col1, right: W - col1 - colW },
-    styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
-    headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
-    alternateRowStyles: { fillColor:[248,246,242] },
-    columnStyles: {
-      0: { cellWidth: colW * 0.44 },
-      1: { cellWidth: colW * 0.30 },
-      2: { cellWidth: colW * 0.26, halign:'right' }
-    },
-  });
-  y1 = doc.lastAutoTable.finalY + 4;
-
-  // RIGHT: Transport + Properties + Extras
-  let y2 = y;
-
-  if (d.carRows.length > 0) {
-    const carRows2 = [[{ content:'TRANSPORT — VEHICLES PER DAY', colSpan:3, styles:secSt }]];
-    d.carRows.forEach(r => {
-      r.vehicles.forEach(v => carRows2.push([
-        `Day ${r.day}${v.type?' — '+v.type:''}`,
-        v.note || '',
-        fmtP(v.cost)
-      ]));
-      if (r.vehicles.length > 1)
-        carRows2.push([{ content:`Day ${r.day} Subtotal`, colSpan:2, styles:{fontStyle:'bold'} },
-                       { content:fmtP(r.dayTotal), styles:{fontStyle:'bold',halign:'right'} }]);
-    });
-    carRows2.push([{ content:'Transport Total', colSpan:2, styles:{fontStyle:'bold'} },
-                   { content:fmtP(d.totalCar), styles:{fontStyle:'bold',halign:'right'} }]);
-    doc.autoTable({
-      startY: y2,
-      head: [['Vehicle / Day', 'Route', 'Amount']],
-      body: carRows2,
-      tableWidth: colW,
-      margin: { left:col2, right:W-col2-colW },
-      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
-      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
-      alternateRowStyles: { fillColor:[248,246,242] },
-      columnStyles: { 0:{cellWidth:colW*0.38}, 1:{cellWidth:colW*0.37}, 2:{cellWidth:colW*0.25,halign:'right'} },
-    });
-    y2 = doc.lastAutoTable.finalY + 4;
-  }
-
-  if (d.propRows.length > 0) {
-    const pRows = [[{ content:'PROPERTIES (B2B RATES)', colSpan:3, styles:secSt }]];
-    d.propRows.forEach(r => pRows.push([r.name, `${r.rooms}rm x ${r.nights}nt @ Rs.${r.rate}`, fmtP(r.total)]));
-    pRows.push([{ content:'Properties Subtotal', colSpan:2, styles:{fontStyle:'bold'} },
-                { content:fmtP(d.totalProp), styles:{fontStyle:'bold',halign:'right'} }]);
-    doc.autoTable({
-      startY: y2,
-      head: [['Property', 'Basis', 'Amount']],
-      body: pRows,
-      tableWidth: colW,
-      margin: { left:col2, right:W-col2-colW },
-      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
-      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
-      alternateRowStyles: { fillColor:[248,246,242] },
-      columnStyles: { 0:{cellWidth:colW*0.4}, 1:{cellWidth:colW*0.35}, 2:{cellWidth:colW*0.25,halign:'right'} },
-    });
-    y2 = doc.lastAutoTable.finalY + 4;
-  }
-
-  if (d.extraRows.length > 0) {
-    const eRows = [[{ content:'EXTRAS & MISCELLANEOUS', colSpan:2, styles:secSt }]];
-    d.extraRows.forEach(r => eRows.push([r.desc, fmtP(r.amt)]));
-    eRows.push([{ content:'Extras Subtotal', styles:{fontStyle:'bold'} },
-                { content:fmtP(d.totalExtras), styles:{fontStyle:'bold',halign:'right'} }]);
-    doc.autoTable({
-      startY: y2,
-      head: [['Description', 'Amount']],
-      body: eRows,
-      tableWidth: colW,
-      margin: { left:col2, right:W-col2-colW },
-      styles: { fontSize:8, cellPadding:2.6, font:'helvetica', overflow:'linebreak' },
-      headStyles: { fillColor:[26,61,43], textColor:255, fontStyle:'bold', fontSize:7.5 },
-      alternateRowStyles: { fillColor:[248,246,242] },
-      columnStyles: { 0:{cellWidth:colW*0.75}, 1:{cellWidth:colW*0.25,halign:'right'} },
-    });
-    y2 = doc.lastAutoTable.finalY + 4;
-  }
-
-  // ── TOTALS BOX (full width) ──
-  const yFinal = Math.max(y1, y2) + 4;
-  const totals = [
-    { lbl:'Base Cost (Total)',                          val:fmtP(d.grandTotal),              hi:false },
-    { lbl:`Markup (${d.markupPct}%)`,                   val:fmtP(d.sellingPrice-d.grandTotal), hi:false },
-    { lbl:'SELLING PRICE',                              val:fmtP(d.sellingPrice),             hi:true  },
-    { lbl:`Per Person (base, ${d.totalPersons} pax)`,   val:fmtP(d.perPerson),               hi:false },
-  ];
-  const boxH = 7 + totals.length * 9;
-  const needPage = yFinal + boxH > H - 16;
-  const ty = needPage ? (doc.addPage(), 20) : yFinal;
-
-  doc.setFillColor(26, 61, 43);
-  doc.roundedRect(M, ty, W - M*2, boxH, 3, 3, 'F');
-  totals.forEach((t, i) => {
-    if (t.hi) {
-      doc.setFillColor(201, 168, 76);
-      doc.rect(M, ty + 7 + i*9, W - M*2, 9, 'F');
-    }
-    doc.setFont('helvetica', t.hi ? 'bold' : 'normal');
-    doc.setFontSize(t.hi ? 10 : 9);
-    if (t.hi) doc.setTextColor(26, 61, 43); else doc.setTextColor(255, 255, 255);
-    doc.text(t.lbl, M + 6, ty + 13 + i*9);
-    doc.text(t.val, W - M - 5, ty + 13 + i*9, { align:'right' });
-  });
-
-  // ── FOOTER ──
-  doc.setFillColor(13, 26, 16);
-  doc.rect(0, H - 12, W, 12, 'F');
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(145,180,160);
-  doc.text('Sana On The Go  |  Into The Wild Tour and Travels  |  Siliguri, North Bengal', W/2, H-7, {align:'center'});
-  doc.setTextColor(201,168,76);
-  doc.text('+91 98747 40763  •  sayantikaintothewild@gmail.com  •  Instagram: @sana.onthe.go', W/2, H-2, {align:'center'});
-
-  doc.save(`SanaOnTheGo_${(tripName||'Quote').replace(/\s+/g,'_')}.pdf`);
-}
-
-function fmtP(n) {
-  if (n === '' || n == null) return '';
-  return 'Rs.' + Math.round(n).toLocaleString('en-IN');
-}
-
-// ─── RESET ──────────────────────────────────────────────────────
+// ── RESET ───────────────────────────────────────────────────
 function resetAll() {
-  if (!confirm('Reset everything?')) return;
-  document.getElementById('tripName').value = '';
-  document.getElementById('clientName').value = '';
-  document.getElementById('numNights').value = 3;
-  document.getElementById('numAdults').value = 4;
-  document.getElementById('numRooms').value  = 2;
-  document.getElementById('markupPct').value = 15;
-  document.getElementById('childrenList').innerHTML = '';
-  document.getElementById('extrasList').innerHTML   = '';
-  childCount = 0; extraCount = 0;
-  carEntryCount = {}; carEntryVisible = {};
-  selectedProperties.clear();
-  document.querySelectorAll('.prop-card').forEach(c => c.classList.remove('selected'));
+  if(!confirm('Reset everything?')) return;
+  ['clientName','clientPhone','tripName','placesCovered','pickupDrop'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('numNights').value=3;
+  document.getElementById('numAdults').value=4;
+  document.getElementById('numRooms').value=2;
+  document.getElementById('markupPct').value=15;
+  document.getElementById('childrenList').innerHTML='';
+  document.getElementById('itinList').innerHTML='';
+  document.getElementById('extrasList').innerHTML='';
+  document.getElementById('customIncl').value='';
+  document.getElementById('customExcl').value='';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  childCount=0; itinCount=0; extraCount=0;
+  carEntryCount={}; carEntryVis={}; selProps.clear();
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('on'));
   rebuildAll();
 }
 
-setTimeout(recalculate, 200);
+// ══════════════════════════════════════════════════════════
+//  PDF GENERATION — CLIENT-FACING ESTIMATE
+//  Portrait A4. No cost breakup. Shows:
+//  Client details, trip info, itinerary,
+//  inclusions, exclusions, total cost, per head.
+// ══════════════════════════════════════════════════════════
+function generatePDF() {
+  if(!window._cd) recalculate();
+  const d=window._cd;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, M=16, CW=W-M*2;
+  let y=0;
+
+  // helpers
+  const fmtDate=s=>{ if(!s)return ''; const dt=new Date(s+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+  const checkPage=(need)=>{ if(y+need>276){ doc.addPage(); y=20; } };
+
+  // ── HEADER ──────────────────────────────────────────────
+  doc.setFillColor(26,61,43);
+  doc.rect(0,0,W,38,'F');
+
+  // brand left
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(19); doc.setTextColor(255,255,255);
+  doc.text('SANA ON THE GO',M,15);
+  doc.setFontSize(7.5); doc.setTextColor(232,201,122);
+  doc.text('INTO THE WILD TOUR AND TRAVELS',M,21);
+  doc.setFontSize(7); doc.setTextColor(185,220,200);
+  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com',M,27);
+  doc.text('@sana.onthe.go  |  Siliguri, North Bengal',M,32);
+
+  // gold accent line
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.6);
+  doc.line(0,38,W,38);
+
+  // ── ESTIMATE LABEL ─────────────────────────────────────
+  y=46;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(26,61,43);
+  doc.text('TRIP COST ESTIMATE',M,y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,112,94);
+  doc.text('Prepared on: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),W-M,y,{align:'right'});
+  y+=10;
+
+  // ── CLIENT + TRIP INFO BOX ──────────────────────────────
+  const clientName=document.getElementById('clientName').value||'—';
+  const clientPhone=document.getElementById('clientPhone').value||'';
+  const tripName=document.getElementById('tripName').value||'—';
+  const tripStart=document.getElementById('tripStart').value;
+  const tripEnd=document.getElementById('tripEnd').value;
+  const places=document.getElementById('placesCovered').value||'';
+  const pickup=document.getElementById('pickupDrop').value||'';
+  const accom=document.getElementById('accomType').value||'';
+  const nights=document.getElementById('numNights').value||'—';
+
+  doc.setFillColor(245,242,237);
+  doc.roundedRect(M,y,CW,46,3,3,'F');
+  doc.setDrawColor(216,224,212); doc.setLineWidth(0.4);
+  doc.roundedRect(M,y,CW,46,3,3,'S');
+
+  // left col
+  const lx=M+6, rx=M+CW/2+4;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(26,61,43);
+  doc.text(clientName,lx,y+10);
+  if(clientPhone){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,112,94); doc.text(clientPhone,lx,y+16); }
+
+  doc.setFontSize(7); doc.setTextColor(100,112,94); doc.setFont('helvetica','normal');
+  const infoLines=[
+    ['Destination',tripName],
+    ['Travel Dates',tripStart&&tripEnd?fmtDate(tripStart)+' — '+fmtDate(tripEnd):'—'],
+    ['Duration',nights+'N / '+(parseInt(nights)+1)+'D'],
+  ];
+  infoLines.forEach((il,i)=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(100,112,94); doc.text(il[0]+':',lx,y+24+i*6);
+    doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43); doc.text(il[1],lx+26,y+24+i*6);
+  });
+
+  // right col
+  const rLines=[
+    ['Adults / Children',d.adults+' adults, '+d.children.length+' children'],
+    ['Rooms',String(d.rooms)+' ('+accom+')'],
+    ['Places',places||'—'],
+  ];
+  if(pickup) rLines.push(['Pickup/Drop',pickup]);
+  rLines.forEach((rl,i)=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(100,112,94); doc.text(rl[0]+':',rx,y+10+i*9);
+    doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43);
+    const wrapped=doc.splitTextToSize(rl[1],CW/2-10);
+    doc.text(wrapped,rx+30,y+10+i*9);
+  });
+  y+=54;
+
+  // ── ITINERARY ──────────────────────────────────────────
+  // Collect itin days
+  const itinDays=[];
+  for(let i=1;i<=itinCount;i++){
+    const el=document.getElementById(`itinText_${i}`);
+    if(!el) continue;
+    const txt=el.value.trim();
+    if(txt) itinDays.push({day:i,txt});
+  }
+
+  if(itinDays.length>0){
+    checkPage(14);
+    // section header
+    doc.setFillColor(45,106,79);
+    doc.rect(M,y,CW,9,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text('ITINERARY',M+6,y+6.2);
+    y+=14;
+
+    itinDays.forEach(id=>{
+      // estimate height needed
+      const wrapped=doc.splitTextToSize(id.txt,CW-46);
+      const blockH=Math.max(14,wrapped.length*5.5+8);
+      checkPage(blockH+4);
+
+      // day pill
+      doc.setFillColor(45,106,79);
+      doc.roundedRect(M,y,30,blockH,3,3,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
+      doc.text('DAY',M+15,y+6,{align:'center'});
+      doc.setFontSize(13);
+      doc.text(String(id.day),M+15,y+13,{align:'center'});
+
+      // text area
+      doc.setFillColor(250,249,246);
+      doc.roundedRect(M+34,y,CW-34,blockH,2,2,'F');
+      doc.setDrawColor(216,224,212); doc.setLineWidth(0.3);
+      doc.roundedRect(M+34,y,CW-34,blockH,2,2,'S');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(28,28,28);
+      doc.text(wrapped,M+39,y+6.5);
+
+      y+=blockH+5;
+    });
+    y+=4;
+  }
+
+  // ── INCLUSIONS ─────────────────────────────────────────
+  const inclChips=[...document.querySelectorAll('#inclChips .chip.on')].map(c=>c.textContent.trim());
+  const customIncl=(document.getElementById('customIncl').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const allIncl=[...inclChips,...customIncl];
+
+  const exclChips=[...document.querySelectorAll('#exclChips .chip.on')].map(c=>c.textContent.trim());
+  const customExcl=(document.getElementById('customExcl').value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const allExcl=[...exclChips,...customExcl];
+
+  if(allIncl.length>0||allExcl.length>0){
+    checkPage(16);
+    doc.setFillColor(45,106,79);
+    doc.rect(M,y,CW,9,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text('INCLUSIONS & EXCLUSIONS',M+6,y+6.2);
+    y+=14;
+
+    const inclH=allIncl.length>0?allIncl.length*6+10:0;
+    const exclH=allExcl.length>0?allExcl.length*6+10:0;
+    const colH=Math.max(inclH,exclH,10);
+    checkPage(colH+6);
+
+    const halfW=(CW-6)/2;
+
+    if(allIncl.length>0){
+      doc.setFillColor(237,247,240);
+      doc.roundedRect(M,y,halfW,colH,2,2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(26,61,43);
+      doc.text('INCLUDED',M+5,y+7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
+      allIncl.forEach((item,i)=>{ doc.text('• '+item,M+5,y+15+i*6); });
+    }
+
+    if(allExcl.length>0){
+      const rx2=M+halfW+6;
+      doc.setFillColor(254,242,242);
+      doc.roundedRect(rx2,y,halfW,colH,2,2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(160,20,20);
+      doc.text('NOT INCLUDED',rx2+5,y+7);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
+      allExcl.forEach((item,i)=>{ doc.text('• '+item,rx2+5,y+15+i*6); });
+    }
+
+    y+=colH+10;
+  }
+
+  // ── COST BOX ───────────────────────────────────────────
+  checkPage(44);
+  doc.setFillColor(26,61,43);
+  doc.roundedRect(M,y,CW,40,4,4,'F');
+
+  // decorative gold line top
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.8);
+  doc.line(M+4,y+0.4,M+CW-4,y+0.4);
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(190,220,205);
+  doc.text('TOTAL ESTIMATED COST',M+CW/2,y+10,{align:'center'});
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(232,201,122);
+  doc.text('Rs.'+Math.round(d.selling).toLocaleString('en-IN'),M+CW/2,y+24,{align:'center'});
+
+  // divider
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.2); doc.setGState && doc.setGState(doc.GState({opacity:0.2}));
+  doc.line(M+CW/4,y+28,M+3*CW/4,y+28);
+  if(doc.setGState) doc.setGState(doc.GState({opacity:1}));
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(190,220,205);
+  doc.text('Per Head Cost ('+d.totalPax+' pax)',M+CW/2,y+33,{align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('Rs.'+Math.round(d.perHead).toLocaleString('en-IN'),M+CW/2,y+39,{align:'center'});
+
+  y+=48;
+
+  // ── NOTE ───────────────────────────────────────────────
+  checkPage(20);
+  doc.setFillColor(249,246,240);
+  doc.roundedRect(M,y,CW,18,2,2,'F');
+  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(100,112,94);
+  const noteText='This is an estimated cost and may vary based on final confirmation of services, availability and seasonal pricing. '
+    +'Rates are subject to change. Please contact us for a confirmed booking.';
+  const noteWrapped=doc.splitTextToSize(noteText,CW-12);
+  doc.text(noteWrapped,M+6,y+7);
+  y+=24;
+
+  // ── FOOTER ─────────────────────────────────────────────
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let pg=1;pg<=totalPages;pg++){
+    doc.setPage(pg);
+    doc.setFillColor(13,26,16);
+    doc.rect(0,282,W,15,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(145,180,160);
+    doc.text('Sana On The Go  |  Into The Wild Tour and Travels  |  Siliguri, North Bengal',W/2,287,{align:'center'});
+    doc.setTextColor(201,168,76);
+    doc.text('+91 98747 40763  •  sayantikaintothewild@gmail.com  •  @sana.onthe.go',W/2,292,{align:'center'});
+    doc.setTextColor(120,150,130); doc.setFontSize(6);
+    doc.text(`Page ${pg} of ${totalPages}`,W-M,292,{align:'right'});
+  }
+
+  const cname=(document.getElementById('clientName').value||'Estimate').replace(/\s+/g,'_');
+  doc.save(`SanaOnTheGo_Estimate_${cname}.pdf`);
+}
+
+setTimeout(recalculate,200);
 </script>
 </body>
 </html>
