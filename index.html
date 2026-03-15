@@ -853,27 +853,27 @@ function generatePDF() {
 
   // ── HEADER ──────────────────────────────────────────────
   doc.setFillColor(26,61,43);
-  doc.rect(0,0,W,38,'F');
+  doc.rect(0,0,W,42,'F');
 
   // brand left
   doc.setFont('helvetica','bold');
-  doc.setFontSize(19); doc.setTextColor(255,255,255);
+  doc.setFontSize(22); doc.setTextColor(255,255,255);
   doc.text('SANA ON THE GO',M,15);
-  doc.setFontSize(7.5); doc.setTextColor(232,201,122);
-  doc.text('INTO THE WILD TOUR AND TRAVELS',M,21);
-  doc.setFontSize(7); doc.setTextColor(185,220,200);
-  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com',M,27);
-  doc.text('@sana.onthe.go  |  Siliguri, North Bengal',M,32);
+  doc.setFontSize(9); doc.setTextColor(232,201,122);
+  doc.text('INTO THE WILD TOUR AND TRAVELS',M,22);
+  doc.setFontSize(8.5); doc.setTextColor(185,220,200);
+  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com',M,29);
+  doc.text('@sana.onthe.go  |  Siliguri, North Bengal',M,35);
 
   // gold accent line
   doc.setDrawColor(201,168,76); doc.setLineWidth(0.6);
-  doc.line(0,38,W,38);
+  doc.line(0,42,W,42);
 
   // ── ESTIMATE LABEL ─────────────────────────────────────
-  y=46;
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(26,61,43);
+  y=52;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(26,61,43);
   doc.text('TRIP COST ESTIMATE',M,y);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,112,94);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,112,94);
   doc.text('Prepared on: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),W-M,y,{align:'right'});
   y+=10;
 
@@ -888,42 +888,67 @@ function generatePDF() {
   const accom=se(document.getElementById('accomType').value||'');
   const nights=document.getElementById('numNights').value||'—';
 
+  // Pre-calculate wrapped places text to know box height
+  doc.setFontSize(10);
+  const placesWrapped = places ? doc.splitTextToSize(places, CW-12) : ['—'];
+  const pickupWrapped = pickup ? doc.splitTextToSize(pickup, CW-12) : [];
+  // box height: top padding + client name + phone + gap + rows + places lines + pickup lines + bottom padding
+  const rowH = 8;
+  const baseRows = 4; // destination, dates, duration, adults/rooms
+  const extraLines = placesWrapped.length - 1 + (pickupWrapped.length > 0 ? pickupWrapped.length : 0);
+  const boxH = 18 + baseRows * rowH + extraLines * 6 + 10;
+
   doc.setFillColor(245,242,237);
-  doc.roundedRect(M,y,CW,46,3,3,'F');
+  doc.roundedRect(M,y,CW,boxH,3,3,'F');
   doc.setDrawColor(216,224,212); doc.setLineWidth(0.4);
-  doc.roundedRect(M,y,CW,46,3,3,'S');
+  doc.roundedRect(M,y,CW,boxH,3,3,'S');
 
-  // left col
-  const lx=M+6, rx=M+CW/2+4;
-  doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(26,61,43);
-  doc.text(clientName,lx,y+10);
-  if(clientPhone){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,112,94); doc.text(clientPhone,lx,y+16); }
+  const lx = M+8;
+  // client name
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(26,61,43);
+  doc.text(clientName, lx, y+12);
+  // phone
+  if(clientPhone){
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(100,112,94);
+    doc.text(clientPhone, lx, y+20);
+  }
 
-  doc.setFontSize(7); doc.setTextColor(100,112,94); doc.setFont('helvetica','normal');
-  const infoLines=[
-    ['Destination',tripName],
-    ['Travel Dates',tripStart&&tripEnd?fmtDate(tripStart)+' — '+fmtDate(tripEnd):'—'],
-    ['Duration',nights+'N / '+(parseInt(nights)+1)+'D'],
+  // info rows — full width, label left + value right of label
+  const infoRows = [
+    ['Destination',    tripName],
+    ['Travel Dates',   tripStart&&tripEnd ? fmtDate(tripStart)+' — '+fmtDate(tripEnd) : '—'],
+    ['Duration',       nights+'N / '+(parseInt(nights)+1)+'D'],
+    ['Adults / Children', d.adults+' adults, '+d.children.length+' children'],
+    ['Rooms',          String(d.rooms)+' ('+accom+')'],
   ];
-  infoLines.forEach((il,i)=>{
-    doc.setFont('helvetica','bold'); doc.setTextColor(100,112,94); doc.text(il[0]+':',lx,y+24+i*6);
-    doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43); doc.text(il[1],lx+26,y+24+i*6);
-  });
 
-  // right col
-  const rLines=[
-    ['Adults / Children',d.adults+' adults, '+d.children.length+' children'],
-    ['Rooms',String(d.rooms)+' ('+accom+')'],
-    ['Places',places||'—'],
-  ];
-  if(pickup) rLines.push(['Pickup/Drop',pickup]);
-  rLines.forEach((rl,i)=>{
-    doc.setFont('helvetica','bold'); doc.setTextColor(100,112,94); doc.text(rl[0]+':',rx,y+10+i*9);
+  let ry = y + 29;
+  const labelW = 38;
+  infoRows.forEach(row => {
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(100,112,94);
+    doc.text(row[0]+':', lx, ry);
     doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43);
-    const wrapped=doc.splitTextToSize(rl[1],CW/2-10);
-    doc.text(wrapped,rx+30,y+10+i*9);
+    const valWrapped = doc.splitTextToSize(row[1], CW - labelW - 14);
+    doc.text(valWrapped, lx + labelW, ry);
+    ry += rowH * valWrapped.length;
   });
-  y+=54;
+
+  // Places — can be long, gets its own wrapped treatment
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(100,112,94);
+  doc.text('Places:', lx, ry);
+  doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43);
+  doc.text(placesWrapped, lx + labelW, ry);
+  ry += rowH + (placesWrapped.length - 1) * 5.5;
+
+  if(pickup){
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(100,112,94);
+    doc.text('Pickup/Drop:', lx, ry);
+    doc.setFont('helvetica','normal'); doc.setTextColor(26,61,43);
+    doc.text(pickupWrapped, lx + labelW, ry);
+    ry += rowH + (pickupWrapped.length - 1) * 5.5;
+  }
+
+  y += boxH + 8;
 
   // ── ITINERARY ──────────────────────────────────────────
   // Collect itin days
@@ -936,37 +961,35 @@ function generatePDF() {
   }
 
   if(itinDays.length>0){
-    checkPage(14);
-    // section header
+    checkPage(16);
     doc.setFillColor(45,106,79);
-    doc.rect(M,y,CW,9,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-    doc.text('ITINERARY',M+6,y+6.2);
-    y+=14;
+    doc.rect(M,y,CW,11,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
+    doc.text('ITINERARY',M+6,y+7.5);
+    y+=16;
 
     itinDays.forEach(id=>{
-      // estimate height needed
       const wrapped=doc.splitTextToSize(id.txt,CW-46);
-      const blockH=Math.max(14,wrapped.length*5.5+8);
-      checkPage(blockH+4);
+      const blockH=Math.max(18,wrapped.length*6.5+10);
+      checkPage(blockH+5);
 
       // day pill
       doc.setFillColor(45,106,79);
       doc.roundedRect(M,y,30,blockH,3,3,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
-      doc.text('DAY',M+15,y+6,{align:'center'});
-      doc.setFontSize(13);
-      doc.text(String(id.day),M+15,y+13,{align:'center'});
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+      doc.text('DAY',M+15,y+7,{align:'center'});
+      doc.setFontSize(15);
+      doc.text(String(id.day),M+15,y+15,{align:'center'});
 
       // text area
       doc.setFillColor(250,249,246);
       doc.roundedRect(M+34,y,CW-34,blockH,2,2,'F');
       doc.setDrawColor(216,224,212); doc.setLineWidth(0.3);
       doc.roundedRect(M+34,y,CW-34,blockH,2,2,'S');
-      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(28,28,28);
-      doc.text(wrapped,M+39,y+6.5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(28,28,28);
+      doc.text(wrapped,M+39,y+8);
 
-      y+=blockH+5;
+      y+=blockH+6;
     });
     y+=4;
   }
@@ -981,79 +1004,75 @@ function generatePDF() {
   const allExcl=[...exclChips,...customExcl];
 
   if(allIncl.length>0||allExcl.length>0){
-    const inclH=allIncl.length>0?allIncl.length*6+14:0;
-    const exclH=allExcl.length>0?allExcl.length*6+14:0;
-    const colH=Math.max(inclH,exclH,14);
-    const totalBlockH=9+6+colH+10; // header bar + gap + columns + bottom margin
-    checkPage(totalBlockH); // check BEFORE drawing anything
+    const inclH=allIncl.length>0?allIncl.length*7.5+16:0;
+    const exclH=allExcl.length>0?allExcl.length*7.5+16:0;
+    const colH=Math.max(inclH,exclH,16);
+    const totalBlockH=11+6+colH+10;
+    checkPage(totalBlockH);
 
     doc.setFillColor(45,106,79);
-    doc.rect(M,y,CW,9,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-    doc.text('INCLUSIONS & EXCLUSIONS',M+6,y+6.2);
-    y+=14;
+    doc.rect(M,y,CW,11,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
+    doc.text('INCLUSIONS & EXCLUSIONS',M+6,y+7.5);
+    y+=16;
 
     const halfW=(CW-6)/2;
 
     if(allIncl.length>0){
       doc.setFillColor(237,247,240);
       doc.roundedRect(M,y,halfW,colH,2,2,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(26,61,43);
-      doc.text('INCLUDED',M+5,y+7);
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
-      allIncl.forEach((item,i)=>{ doc.text('- '+item,M+5,y+15+i*6); });
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(26,61,43);
+      doc.text('INCLUDED',M+5,y+9);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(28,28,28);
+      allIncl.forEach((item,i)=>{ doc.text('- '+item,M+5,y+17+i*7.5); });
     }
 
     if(allExcl.length>0){
       const rx2=M+halfW+6;
       doc.setFillColor(254,242,242);
       doc.roundedRect(rx2,y,halfW,colH,2,2,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(160,20,20);
-      doc.text('NOT INCLUDED',rx2+5,y+7);
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(28,28,28);
-      allExcl.forEach((item,i)=>{ doc.text('- '+item,rx2+5,y+15+i*6); });
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(160,20,20);
+      doc.text('NOT INCLUDED',rx2+5,y+9);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(28,28,28);
+      allExcl.forEach((item,i)=>{ doc.text('- '+item,rx2+5,y+17+i*7.5); });
     }
 
     y+=colH+10;
   }
 
   // ── COST BOX ───────────────────────────────────────────
-  checkPage(44);
+  checkPage(52);
   doc.setFillColor(26,61,43);
-  doc.roundedRect(M,y,CW,40,4,4,'F');
+  doc.roundedRect(M,y,CW,48,4,4,'F');
 
-  // decorative gold line top
   doc.setDrawColor(201,168,76); doc.setLineWidth(0.8);
   doc.line(M+4,y+0.4,M+CW-4,y+0.4);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(190,220,205);
-  doc.text('TOTAL ESTIMATED COST',M+CW/2,y+10,{align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(190,220,205);
+  doc.text('TOTAL ESTIMATED COST',M+CW/2,y+12,{align:'center'});
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(232,201,122);
-  doc.text('Rs.'+Math.round(d.selling).toLocaleString('en-IN'),M+CW/2,y+24,{align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(28); doc.setTextColor(232,201,122);
+  doc.text('Rs.'+Math.round(d.selling).toLocaleString('en-IN'),M+CW/2,y+27,{align:'center'});
 
-  // divider
-  doc.setDrawColor(255,255,255); doc.setLineWidth(0.2); doc.setGState && doc.setGState(doc.GState({opacity:0.2}));
-  doc.line(M+CW/4,y+28,M+3*CW/4,y+28);
-  if(doc.setGState) doc.setGState(doc.GState({opacity:1}));
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.2);
+  doc.line(M+CW/4,y+31,M+3*CW/4,y+31);
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(190,220,205);
-  doc.text('Per Head Cost ('+d.totalPax+' pax)',M+CW/2,y+33,{align:'center'});
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
-  doc.text('Rs.'+Math.round(d.perHead).toLocaleString('en-IN'),M+CW/2,y+39,{align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(190,220,205);
+  doc.text('Per Head Cost ('+d.totalPax+' pax)',M+CW/2,y+38,{align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+  doc.text('Rs.'+Math.round(d.perHead).toLocaleString('en-IN'),M+CW/2,y+46,{align:'center'});
 
-  y+=48;
+  y+=56;
 
   // ── NOTE ───────────────────────────────────────────────
-  checkPage(20);
+  checkPage(22);
   doc.setFillColor(249,246,240);
-  doc.roundedRect(M,y,CW,18,2,2,'F');
-  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(100,112,94);
-  const noteText='This is an estimated cost and may vary based on final confirmation of services, availability and seasonal pricing. '
-    +'Rates are subject to change. Please contact us for a confirmed booking.';
+  doc.roundedRect(M,y,CW,20,2,2,'F');
+  doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(100,112,94);
+  const noteText='This is an estimated cost and may vary based on final confirmation of services, availability and seasonal pricing. Rates are subject to change. Please contact us for a confirmed booking.';
   const noteWrapped=doc.splitTextToSize(noteText,CW-12);
-  doc.text(noteWrapped,M+6,y+7);
-  y+=24;
+  doc.text(noteWrapped,M+6,y+8);
+  y+=26;
 
   // ── FOOTER ─────────────────────────────────────────────
   const totalPages=doc.internal.getNumberOfPages();
@@ -1061,12 +1080,12 @@ function generatePDF() {
     doc.setPage(pg);
     doc.setFillColor(13,26,16);
     doc.rect(0,282,W,15,'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(145,180,160);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(145,180,160);
     doc.text('Sana On The Go  |  Into The Wild Tour and Travels  |  Siliguri, North Bengal',W/2,287,{align:'center'});
     doc.setTextColor(201,168,76);
-    doc.text('+91 98747 40763  •  sayantikaintothewild@gmail.com  •  @sana.onthe.go',W/2,292,{align:'center'});
-    doc.setTextColor(120,150,130); doc.setFontSize(6);
-    doc.text(`Page ${pg} of ${totalPages}`,W-M,292,{align:'right'});
+    doc.text('+91 98747 40763  •  sayantikaintothewild@gmail.com  •  @sana.onthe.go',W/2,293,{align:'center'});
+    doc.setTextColor(120,150,130); doc.setFontSize(7);
+    doc.text(`Page ${pg} of ${totalPages}`,W-M,293,{align:'right'});
   }
 
   const cname=(document.getElementById('clientName').value||'Estimate').replace(/\s+/g,'_');
