@@ -215,14 +215,22 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
 ════════════════════════════════════════════ -->
 <div class="section-heading">👶 Children</div>
 <div class="card">
-  <div class="info-box">
-    <strong>Lodging Age Rules:</strong><br>
-    🟢 <strong>Below 3 yrs</strong> — No lodging charge &nbsp;|&nbsp;
-    🟡 <strong>3–6 yrs</strong> — Half lodging rate &nbsp;|&nbsp;
-    🔵 <strong>Above 6 yrs</strong> — Full rate
+  <div class="card-title">Children Costing — Manual Entry</div>
+  <div class="row r3">
+    <div class="field">
+      <label>No. of Children</label>
+      <input type="number" id="numChildren" value="0" min="0" max="50" oninput="recalculate()">
+    </div>
+    <div class="field">
+      <label>Food Cost per Child (Rs.) — Total Trip</label>
+      <input type="number" id="childFoodTotal" value="0" min="0" oninput="recalculate()">
+    </div>
+    <div class="field">
+      <label>Lodging Cost per Child (Rs.) — Total Trip</label>
+      <input type="number" id="childLodgeTotal" value="0" min="0" oninput="recalculate()">
+    </div>
   </div>
-  <div id="childrenList"></div>
-  <button class="btn-add-day" onclick="addChild()">+ Add Child</button>
+  <p class="hint">Enter the total per-child food and lodging cost for the full trip. These will be multiplied by number of children.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -272,6 +280,7 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
     <span class="chip" data-type="excl">❄️ Snow Vehicle Charges</span>
     <span class="chip" data-type="excl">🎭 Optional Activities</span>
     <span class="chip" data-type="excl">🧗 Porter / Trekking Gear</span>
+    <span class="chip" data-type="excl">Any cost due to Natural Calamity / Road Blockage</span>
   </div>
   <div class="field">
     <label>Custom Exclusions (one per line)</label>
@@ -296,13 +305,22 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
       <tbody id="daysBody"></tbody>
     </table>
   </div>
-  <p class="hint">Check "Use Combined?" when a property bundles food & lodging. Child lodging auto-calculated from age rules.</p>
+  <p class="hint">Check "Use Combined?" when a property bundles food & lodging. Children's costs are entered separately in the Children section above.</p>
 </div>
 
 <!-- Transport -->
 <div class="card">
-  <div class="card-title">🚗 Transport — Per Day (Multiple Vehicles)</div>
-  <div id="carBlocks"></div>
+  <div class="card-title">🚗 Transport — Total Cost</div>
+  <div class="row r2">
+    <div class="field">
+      <label>Total Transport Cost (Rs.)</label>
+      <input type="number" id="totalCarCost" value="0" min="0" oninput="recalculate()">
+    </div>
+    <div class="field">
+      <label>Note (optional — internal only)</label>
+      <input type="text" id="carNote" placeholder="e.g. 2 Boleros for 5 days">
+    </div>
+  </div>
 </div>
 
 <!-- Properties -->
@@ -403,8 +421,7 @@ const PROPERTY_DATA = [
 // ══════════════════════════════════════════════════════════
 
 let selProps = new Set();
-let extraCount = 0, childCount = 0, itinCount = 0;
-let carEntryCount = {}, carEntryVis = {};
+let extraCount = 0, itinCount = 0;
 
 window.onload = () => {
   buildRegionTabs(); buildPropGrid('All');
@@ -416,7 +433,7 @@ window.onload = () => {
   document.getElementById('tripStart').value = today;
 };
 
-function rebuildAll() { rebuildDaysTable(); rebuildCarBlocks(); recalculate(); }
+function rebuildAll() { rebuildDaysTable(); recalculate(); }
 
 // ── ITINERARY ──────────────────────────────────────────────
 function addItinDay() {
@@ -433,38 +450,6 @@ function addItinDay() {
 
 function removeItinDay(id) {
   document.getElementById(`itin_${id}`)?.remove();
-}
-
-// ── CHILDREN ──────────────────────────────────────────────
-function addChild() {
-  childCount++;
-  const id = childCount;
-  const div = document.createElement('div');
-  div.id = `child_${id}`; div.className = 'child-row';
-  div.innerHTML = `
-    <div class="field" style="min-width:130px"><label>Name / Label</label>
-      <input type="text" id="cName_${id}" value="Child ${id}"></div>
-    <div class="field" style="min-width:80px"><label>Age (yrs)</label>
-      <input type="number" id="cAge_${id}" value="5" min="0" max="17" oninput="updateAgeBadge(${id});recalculate()"></div>
-    <div style="padding-bottom:8px" id="cBadge_${id}"></div>
-    <button class="btn btn-sm btn-danger" style="margin-bottom:8px" onclick="removeChild(${id})">✕</button>`;
-  document.getElementById('childrenList').appendChild(div);
-  updateAgeBadge(id); recalculate();
-}
-function updateAgeBadge(id) {
-  const age = parseInt(document.getElementById(`cAge_${id}`)?.value)||0;
-  const b = document.getElementById(`cBadge_${id}`);
-  if (!b) return;
-  b.innerHTML = age<3
-    ? `<span class="age-badge age-free">Under 3 — Free</span>`
-    : age<=6
-      ? `<span class="age-badge age-half">Age 3–6 — Half rate</span>`
-      : `<span class="age-badge age-full">Age 7+ — Full rate</span>`;
-}
-function removeChild(id) { document.getElementById(`child_${id}`)?.remove(); recalculate(); }
-function getChildMult(id) {
-  const age = parseInt(document.getElementById(`cAge_${id}`)?.value)||0;
-  return age<3 ? 0 : age<=6 ? 0.5 : 1;
 }
 
 // ── DAYS TABLE ─────────────────────────────────────────────
@@ -511,109 +496,6 @@ function copyDayFwd(from) {
   }
   const btn = document.querySelector(`#daysBody tr:nth-child(${from}) .cfwd-btn`);
   if (btn) { btn.textContent='✓'; btn.style.background='var(--green-lt)'; setTimeout(()=>{btn.textContent='▶ Apply';btn.style.background='';},1200); }
-  recalculate();
-}
-
-// ── CAR BLOCKS ─────────────────────────────────────────────
-function rebuildCarBlocks() {
-  const nights = parseInt(document.getElementById('numNights').value)||3;
-  const days = nights+1;
-  const cont = document.getElementById('carBlocks');
-  cont.innerHTML = ''; carEntryCount={}; carEntryVis={};
-  for (let d=1; d<=days; d++) {
-    carEntryCount[d]=1; carEntryVis[d]=new Set([1]);
-    const lbl = d===1?'Day 1 (Arrival)':d===days?`Day ${d} (Dep.)`:`Day ${d}`;
-    const maxC = days-d;
-    const cfwd = maxC>0
-      ? `<div style="display:flex;align-items:center;gap:5px">
-           <span style="font-size:.73rem;color:var(--muted);white-space:nowrap">Copy next</span>
-           <input type="number" id="carCfQty_${d}" value="1" min="1" max="${maxC}"
-             style="width:44px;padding:4px 6px;font-size:.78rem;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8">
-           <span style="font-size:.73rem;color:var(--muted)">day(s)</span>
-           <button class="cfwd-btn" onclick="copyCarFwd(${d})">▶ Apply</button>
-         </div>` : '';
-    const blk = document.createElement('div');
-    blk.className='car-block'; blk.id=`carBlk_${d}`;
-    blk.innerHTML = `
-      <div class="car-block-hdr">
-        <span class="car-block-title">🚗 ${lbl}</span>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          ${cfwd}
-          <button class="btn btn-sm btn-out" onclick="addCarEntry(${d})">+ Vehicle</button>
-        </div>
-      </div>
-      <div id="carEnt_${d}"></div>`;
-    cont.appendChild(blk);
-    appendCarEntry(d,1);
-  }
-}
-
-function appendCarEntry(day, eid) {
-  const cont = document.getElementById(`carEnt_${day}`);
-  if (!cont) return;
-  const div = document.createElement('div');
-  div.className='car-entry'; div.id=`ce_${day}_${eid}`;
-  const rmBtn = eid>1
-    ? `<button class="btn btn-sm btn-danger" onclick="removeCarEntry(${day},${eid})">✕</button>`
-    : `<div></div>`;
-  div.innerHTML = `
-    <div class="field"><label>Vehicle</label>
-      <select id="cType_${day}_${eid}">
-        <option value="">— Select —</option>
-        <option value="Bolero">Bolero</option>
-        <option value="Swift">Swift</option>
-      </select>
-    </div>
-    <div class="field"><label>Cost (Rs.)</label>
-      <input type="number" id="cCost_${day}_${eid}" value="0" min="0" oninput="recalculate()"></div>
-    <div class="field"><label>Route / Note</label>
-      <input type="text" id="cNote_${day}_${eid}" placeholder="e.g. NJP to Gangtok"></div>
-    ${rmBtn}`;
-  cont.appendChild(div);
-}
-
-function addCarEntry(day) {
-  carEntryCount[day]=(carEntryCount[day]||1)+1;
-  const nid=carEntryCount[day]; carEntryVis[day].add(nid);
-  appendCarEntry(day,nid); recalculate();
-}
-function removeCarEntry(day,eid) {
-  document.getElementById(`ce_${day}_${eid}`)?.remove();
-  carEntryVis[day]?.delete(eid); recalculate();
-}
-function copyCarFwd(from) {
-  const nights=parseInt(document.getElementById('numNights').value)||3;
-  const days=nights+1;
-  const qty=parseInt(document.getElementById(`carCfQty_${from}`)?.value)||1;
-  const lim=Math.min(from+qty,days);
-  const src=[];
-  const vs=carEntryVis[from]||new Set([1]);
-  vs.forEach(e=>{
-    src.push({
-      type: document.getElementById(`cType_${from}_${e}`)?.value||'',
-      cost: document.getElementById(`cCost_${from}_${e}`)?.value||'0',
-      note: document.getElementById(`cNote_${from}_${e}`)?.value||''
-    });
-  });
-  for (let d=from+1; d<=lim; d++) {
-    const old=[...(carEntryVis[d]||new Set([1]))];
-    old.forEach(e=>{ if(e>1){document.getElementById(`ce_${d}_${e}`)?.remove();carEntryVis[d]?.delete(e);} });
-    carEntryCount[d]=1;
-    if(src[0]){
-      const t=document.getElementById(`cType_${d}_1`); if(t) t.value=src[0].type;
-      const c=document.getElementById(`cCost_${d}_1`); if(c) c.value=src[0].cost;
-      const n=document.getElementById(`cNote_${d}_1`); if(n) n.value=src[0].note;
-    }
-    for(let i=1;i<src.length;i++){
-      carEntryCount[d]++; const nid=carEntryCount[d];
-      carEntryVis[d].add(nid); appendCarEntry(d,nid);
-      const t=document.getElementById(`cType_${d}_${nid}`); if(t) t.value=src[i].type;
-      const c=document.getElementById(`cCost_${d}_${nid}`); if(c) c.value=src[i].cost;
-      const n=document.getElementById(`cNote_${d}_${nid}`); if(n) n.value=src[i].note;
-    }
-  }
-  const btn=document.querySelector(`#carBlk_${from} .cfwd-btn`);
-  if(btn){btn.textContent='✓';btn.style.background='var(--green-lt)';setTimeout(()=>{btn.textContent='▶ Apply';btn.style.background='';},1200);}
   recalculate();
 }
 
@@ -677,51 +559,30 @@ function recalculate() {
   const rooms=parseInt(document.getElementById('numRooms').value)||1;
   const markupPct=parseFloat(document.getElementById('markupPct').value)||0;
 
-  // children
-  const children=[];
-  for(let i=1;i<=childCount;i++){
-    if(!document.getElementById(`child_${i}`)) continue;
-    const age=parseInt(document.getElementById(`cAge_${i}`)?.value)||0;
-    const name=document.getElementById(`cName_${i}`)?.value||`Child ${i}`;
-    children.push({id:i,name,age,mult:getChildMult(i)});
-  }
-  const totalPax=adults+children.length;
+  // children — simple manual cost
+  const numChildren=parseInt(document.getElementById('numChildren')?.value)||0;
+  const childFoodTotal=parseFloat(document.getElementById('childFoodTotal')?.value)||0;
+  const childLodgeTotal=parseFloat(document.getElementById('childLodgeTotal')?.value)||0;
+  const totChildCost=(childFoodTotal+childLodgeTotal)*numChildren;
+  const totalPax=adults+numChildren;
 
-  // food & lodging
-  let totFood=0,totAdultLodge=0,totChildLodge=0;
+  // food & lodging (adults only)
+  let totFood=0,totAdultLodge=0;
   const dayRows=[];
   for(let d=1;d<=days;d++){
     const food=parseFloat(document.getElementById(`food_${d}`)?.value)||0;
     const lodge=parseFloat(document.getElementById(`lodge_${d}`)?.value)||0;
     const comb=parseFloat(document.getElementById(`comb_${d}`)?.value)||0;
     const useC=document.getElementById(`useComb_${d}`)?.checked;
-    let dFood=0,dLodge=0,dCLodge=0;
-    if(useC&&comb>0){
-      dFood=comb*adults;
-      children.forEach(c=>{dCLodge+=comb*c.mult;});
-    } else {
-      dFood=food*adults; dLodge=lodge*adults;
-      children.forEach(c=>{dCLodge+=lodge*c.mult;});
-    }
-    totFood+=dFood; totAdultLodge+=dLodge; totChildLodge+=dCLodge;
-    dayRows.push({day:d,food:dFood,lodge:dLodge,comb:useC&&comb>0?comb*adults:0,cLodge:dCLodge});
+    let dFood=0,dLodge=0;
+    if(useC&&comb>0){ dFood=comb*adults; }
+    else { dFood=food*adults; dLodge=lodge*adults; }
+    totFood+=dFood; totAdultLodge+=dLodge;
+    dayRows.push({day:d,food:dFood,lodge:dLodge,comb:useC&&comb>0?comb*adults:0});
   }
 
-  // cars
-  let totCar=0; const carRows=[];
-  for(let d=1;d<=days;d++){
-    const vs=carEntryVis[d]||new Set([1]);
-    let dayTot=0; const vehs=[];
-    vs.forEach(e=>{
-      const cost=parseFloat(document.getElementById(`cCost_${d}_${e}`)?.value)||0;
-      const type=document.getElementById(`cType_${d}_${e}`)?.value||'';
-      const note=document.getElementById(`cNote_${d}_${e}`)?.value||'';
-      dayTot+=cost;
-      if(cost>0||type) vehs.push({type,cost,note});
-    });
-    totCar+=dayTot;
-    if(vehs.length>0) carRows.push({day:d,vehs,dayTot});
-  }
+  // transport — single total
+  const totCar=parseFloat(document.getElementById('totalCarCost')?.value)||0;
 
   // properties
   let totProp=0; const propRows=[];
@@ -742,7 +603,7 @@ function recalculate() {
     totExtras+=amt; extraRows.push({desc,amt});
   }
 
-  const base=totFood+totAdultLodge+totChildLodge+totCar+totProp+totExtras;
+  const base=totFood+totAdultLodge+totChildCost+totCar+totProp+totExtras;
   const selling=base*(1+markupPct/100);
   const perHead=totalPax>0?selling/totalPax:0;
 
@@ -750,7 +611,7 @@ function recalculate() {
   document.getElementById('sumGrid').innerHTML=[
     {l:'Food (Adults)',v:rf(totFood)},
     {l:'Lodging (Adults)',v:rf(totAdultLodge)},
-    {l:'Children Lodging',v:rf(totChildLodge)},
+    {l:`Children (${numChildren})`,v:rf(totChildCost)},
     {l:'Transport',v:rf(totCar)},
     {l:'Properties',v:rf(totProp)},
     {l:'Extras',v:rf(totExtras)},
@@ -760,16 +621,16 @@ function recalculate() {
   document.getElementById('perHeadLine').textContent=`${totalPax} pax — ${rf(perHead)} / head`;
   document.getElementById('markupResult').innerHTML=`Selling Price: <strong>${rf(selling)}</strong> &nbsp;|&nbsp; Profit: <strong style="color:var(--gold-dk)">${rf(selling-base)}</strong>`;
 
-  buildBreakdown(dayRows,carRows,propRows,extraRows,children,adults,
-    totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,base,selling,markupPct);
+  buildBreakdown(dayRows,totCar,propRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
+    totFood,totAdultLodge,totCar,totProp,totExtras,base,selling,markupPct);
 
-  window._cd={nights,days,adults,children,rooms,markupPct,totalPax,
-    totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,
-    base,selling,perHead,dayRows,carRows,propRows,extraRows};
+  window._cd={nights,days,adults,numChildren,rooms,markupPct,totalPax,
+    totFood,totAdultLodge,totChildCost,totCar,totProp,totExtras,
+    base,selling,perHead,dayRows,propRows,extraRows};
 }
 
-function buildBreakdown(dayRows,carRows,propRows,extraRows,children,adults,
-  totFood,totAdultLodge,totChildLodge,totCar,totProp,totExtras,base,selling,mkp){
+function buildBreakdown(dayRows,totCar,propRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
+  totFood,totAdultLodge,_totCar,totProp,totExtras,base,selling,mkp){
   const tbl=document.getElementById('bkTable');
   const row=(l,a,c='')=>`<tr class="${c}"><td class="bl">${l}</td><td class="ba">${a===''?'':rf(a)}</td></tr>`;
   const sec=t=>`<tr class="bs"><td colspan="2" class="bl" style="font-size:.7rem;letter-spacing:1px;text-transform:uppercase;padding-top:12px">${t}</td></tr>`;
@@ -780,23 +641,14 @@ function buildBreakdown(dayRows,carRows,propRows,extraRows,children,adults,
     else{ if(r.food>0)h+=row(`Day ${r.day} Food (${adults}a)`,r.food); if(r.lodge>0)h+=row(`Day ${r.day} Lodging (${adults}a)`,r.lodge); }
   });
   h+=row('Adult Food+Lodge Subtotal',totFood+totAdultLodge,'bs');
-  if(children.length>0){
-    h+=sec('Children Lodging');
-    children.forEach(c=>{ const t=c.mult===0?'Free':c.mult===.5?'Half':'Full'; h+=row(`${c.name} (Age ${c.age}) — ${t}`,'' ); });
-    dayRows.forEach(r=>{ if(r.cLodge>0)h+=row(`Day ${r.day} Children Lodging`,r.cLodge); });
-    h+=row('Children Lodging Subtotal',totChildLodge,'bs');
+  if(numChildren>0){
+    h+=sec('Children');
+    h+=row(`${numChildren} child(ren) x Food Rs.${childFoodTotal} + Lodge Rs.${childLodgeTotal} each`,totChildCost);
   }
-  if(carRows.length>0){
-    h+=sec('Transport');
-    carRows.forEach(r=>{
-      r.vehs.forEach(v=>h+=row(`Day ${r.day}${v.type?' — '+v.type:''}${v.note?' ('+v.note+')':''}`,v.cost));
-      if(r.vehs.length>1) h+=row(`Day ${r.day} Subtotal`,r.dayTot,'bs');
-    });
-    h+=row('Transport Total',totCar,'bs');
-  }
+  if(totCar>0){ h+=sec('Transport'); h+=row('Total Transport Cost',totCar,'bs'); }
   if(propRows.length>0){
     h+=sec('Properties (B2B)');
-    propRows.forEach(r=>h+=row(`${r.name} ${r.rooms}rm×${r.nights}nt @ Rs.${r.rate}`,r.total));
+    propRows.forEach(r=>h+=row(`${r.name} ${r.rooms}rm x ${r.nights}nt @ Rs.${r.rate}`,r.total));
     h+=row('Properties Subtotal',totProp,'bs');
   }
   if(extraRows.length>0){
@@ -818,15 +670,18 @@ function resetAll() {
   document.getElementById('numNights').value=3;
   document.getElementById('numAdults').value=4;
   document.getElementById('numRooms').value=2;
+  document.getElementById('numChildren').value=0;
+  document.getElementById('childFoodTotal').value=0;
+  document.getElementById('childLodgeTotal').value=0;
+  document.getElementById('totalCarCost').value=0;
   document.getElementById('markupPct').value=15;
-  document.getElementById('childrenList').innerHTML='';
   document.getElementById('itinList').innerHTML='';
   document.getElementById('extrasList').innerHTML='';
   document.getElementById('customIncl').value='';
   document.getElementById('customExcl').value='';
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  childCount=0; itinCount=0; extraCount=0;
-  carEntryCount={}; carEntryVis={}; selProps.clear();
+  extraCount=0; itinCount=0;
+  selProps.clear();
   document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('on'));
   rebuildAll();
 }
@@ -901,7 +756,7 @@ function generatePDF() {
     { label:'Destination',       val: tripName },
     { label:'Travel Dates',      val: tripStart&&tripEnd ? fmtDate(tripStart)+' — '+fmtDate(tripEnd) : '—' },
     { label:'Duration',          val: nights+'N / '+(parseInt(nights)+1)+'D' },
-    { label:'Adults / Children', val: d.adults+' adults, '+d.children.length+' children' },
+    { label:'Adults / Children', val: d.adults+' adults, '+d.numChildren+' children' },
     { label:'Rooms',             val: String(d.rooms)+' ('+accom+')' },
     { label:'Places Covered',    val: places||'—' },
   ];
@@ -964,7 +819,7 @@ function generatePDF() {
   for(let i=1;i<=itinCount;i++){
     const el=document.getElementById(`itinText_${i}`);
     if(!el) continue;
-    const txt=se(el.value.trim());
+    const txt=el.value.trim();
     if(txt) itinDays.push({day:i,txt});
   }
 
@@ -976,31 +831,67 @@ function generatePDF() {
     doc.text('ITINERARY',M+6,y+9);
     y+=18;
 
-    itinDays.forEach(id=>{
-      doc.setFontSize(11);
-      const wrapped=doc.splitTextToSize(id.txt, CW-46);
-      const blockH=Math.max(22, wrapped.length*7+12);
-      checkPage(blockH+6);
+    // Canvas-based text rendering — supports emoji, arrows, dashes, all symbols
+    const TEXT_AREA_W = CW - 36; // mm, text column width after day pill
+    const PX_PER_MM = 3.78;      // 96dpi / 25.4
+    const FONT_PX = 36;          // render at 3x for sharpness
+    const LINE_H_PX = FONT_PX * 1.45;
+    const CANVAS_W_PX = Math.round(TEXT_AREA_W * PX_PER_MM * 2); // 2x canvas for crispness
+
+    const offscreen = document.createElement('canvas');
+    const ctx = offscreen.getContext('2d');
+
+    for (const id of itinDays) {
+      // word-wrap the raw text at canvas width
+      ctx.font = `${FONT_PX}px 'DM Sans', sans-serif`;
+      const words = id.txt.split(' ');
+      const lines = [];
+      let cur = '';
+      for (const w of words) {
+        const test = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(test).width > CANVAS_W_PX - 20) {
+          if (cur) lines.push(cur);
+          cur = w;
+        } else { cur = test; }
+      }
+      if (cur) lines.push(cur);
+
+      const canvasH = Math.max(lines.length * LINE_H_PX + FONT_PX, FONT_PX * 3);
+      const blockH = Math.max(22, canvasH / PX_PER_MM / 2 + 10); // mm
+      checkPage(blockH + 6);
 
       // day pill
       doc.setFillColor(45,106,79);
-      doc.roundedRect(M,y,32,blockH,3,3,'F');
+      doc.roundedRect(M, y, 30, blockH, 3, 3, 'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
-      doc.text('DAY',M+16,y+9,{align:'center'});
+      doc.text('DAY', M+15, y+9, {align:'center'});
       doc.setFontSize(17);
-      doc.text(String(id.day),M+16,y+19,{align:'center'});
+      doc.text(String(id.day), M+15, y+19, {align:'center'});
 
-      // text area
+      // text area background
       doc.setFillColor(250,249,246);
-      doc.roundedRect(M+36,y,CW-36,blockH,2,2,'F');
+      doc.roundedRect(M+34, y, CW-34, blockH, 2, 2, 'F');
       doc.setDrawColor(216,224,212); doc.setLineWidth(0.3);
-      doc.roundedRect(M+36,y,CW-36,blockH,2,2,'S');
-      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(28,28,28);
-      doc.text(wrapped,M+41,y+9);
+      doc.roundedRect(M+34, y, CW-34, blockH, 2, 2, 'S');
 
-      y+=blockH+7;
-    });
-    y+=4;
+      // render text to canvas
+      offscreen.width  = CANVAS_W_PX;
+      offscreen.height = Math.ceil(canvasH);
+      ctx.clearRect(0, 0, offscreen.width, offscreen.height);
+      ctx.font = `${FONT_PX}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = '#1c1c1c';
+      ctx.textBaseline = 'top';
+      lines.forEach((ln, i) => ctx.fillText(ln, 4, i * LINE_H_PX));
+
+      // embed canvas as JPEG into PDF
+      const imgData = offscreen.toDataURL('image/jpeg', 0.92);
+      const imgW = TEXT_AREA_W - 6; // mm
+      const imgH = (offscreen.height / offscreen.width) * imgW;
+      doc.addImage(imgData, 'JPEG', M+37, y+6, imgW, imgH);
+
+      y += blockH + 7;
+    }
+    y += 4;
   }
 
   // ── INCLUSIONS ─────────────────────────────────────────
