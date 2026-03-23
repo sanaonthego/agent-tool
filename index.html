@@ -878,6 +878,9 @@ function generatePDF() {
       offscreen.width  = CANVAS_W_PX;
       offscreen.height = Math.ceil(canvasH);
       ctx.clearRect(0, 0, offscreen.width, offscreen.height);
+      // fill white background — critical for JPEG (no transparency support)
+      ctx.fillStyle = '#faf9f6';
+      ctx.fillRect(0, 0, offscreen.width, offscreen.height);
       ctx.font = `${FONT_PX}px 'DM Sans', sans-serif`;
       ctx.fillStyle = '#1c1c1c';
       ctx.textBaseline = 'top';
