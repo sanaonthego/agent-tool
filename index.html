@@ -51,13 +51,6 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green-mi
 input[type="number"]{-moz-appearance:textfield}
 input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
 textarea{resize:vertical;min-height:68px;line-height:1.6}
-
-/* ITINERARY */
-.itin-day{background:#fafaf8;border:1px solid var(--border);border-radius:9px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start}
-.itin-day-num{background:var(--green);color:#fff;border-radius:7px;font-size:.7rem;font-weight:700;text-align:center;padding:8px 6px;letter-spacing:.5px;white-space:nowrap}
-.itin-day textarea{min-height:60px;font-size:.87rem}
-.btn-rm{background:#fee2e2;border:none;color:#c0392b;border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
-.btn-rm:hover{background:#fca5a5}
 .btn-add-day{display:inline-flex;align-items:center;gap:7px;background:none;border:1.5px dashed var(--green-lt);color:var(--green);padding:8px 16px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;margin-top:6px;transition:background .2s}
 .btn-add-day:hover{background:#eaf5ee}
 
@@ -93,21 +86,6 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
 .age-free{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
 .age-half{background:#fff3e0;color:#e65100;border:1px solid #ffcc80}
 .age-full{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
-
-/* PROPERTIES */
-.rtabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
-.rtab{padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);transition:all .2s}
-.rtab:hover,.rtab.on{background:var(--green);color:#fff;border-color:var(--green)}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.pcard{border:1.5px solid var(--border);border-radius:9px;padding:13px 14px;cursor:pointer;transition:all .2s;background:#fafaf8;position:relative}
-.pcard:hover{border-color:var(--green-mid);background:#f0f7f3}
-.pcard.on{border-color:var(--green);background:#eaf5ee;box-shadow:0 0 0 3px rgba(45,106,79,.1)}
-.pcard.on::after{content:'✓';position:absolute;top:9px;right:11px;color:var(--green);font-weight:700;font-size:.88rem}
-.pname{font-weight:600;font-size:.88rem;color:var(--green-dk);margin-bottom:2px}
-.ploc{font-size:.73rem;color:var(--muted);margin-bottom:6px}
-.prate{font-size:.76rem;color:var(--muted)}
-.prate strong{color:var(--green);font-size:.85rem}
-.pregion{font-size:.66rem;background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 
 /* SUMMARY */
 .sum-box{background:linear-gradient(135deg,var(--green-dk),var(--green));border-radius:var(--radius);padding:24px 28px;color:#fff;margin-bottom:16px;box-shadow:0 6px 28px rgba(26,61,43,.22)}
@@ -151,7 +129,6 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
   .row.r2{grid-template-columns:1fr}
   .btn-lg{width:100%;justify-content:center}
   .car-entry{grid-template-columns:1fr 1fr}
-  .itin-day{grid-template-columns:54px 1fr auto}
 }
 </style>
 </head>
@@ -236,11 +213,19 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
 <!-- ═══════════════════════════════════════════
      SECTION C — ITINERARY
 ════════════════════════════════════════════ -->
-<div class="section-heading">🗺️ Day-by-Day Itinerary</div>
+<div class="section-heading">🗺️ Itinerary</div>
 <div class="card">
-  <div class="card-title">Add a description for each day — this appears in the PDF</div>
-  <div id="itinList"></div>
-  <button class="btn-add-day" onclick="addItinDay()">+ Add Day</button>
+  <div class="card-title">Paste full itinerary — use "Day 1", "Day 2" etc. to separate days</div>
+  <div class="field">
+    <textarea id="itinRaw" rows="12" placeholder="Day 1: Arrival at NJP. Pickup and drive to Gufapatal via scenic mountain roads. Check-in at homestay. Evening at leisure amidst nature. Overnight stay: Gufapatal.
+
+Day 2: After breakfast, drive to Mim Tea Estate. Enjoy the beautiful drive through tea gardens. Explore local surroundings and peaceful viewpoints. Overnight stay: Mim.
+
+Day 3: Proceed towards Chimney, Kurseong. En route enjoy panoramic views. Visit nearby attractions. Check-in and relax. Overnight stay: Chimney.
+
+Day 4: After breakfast, drive back to NJP. Tour ends with beautiful memories." style="min-height:220px;font-size:.92rem;line-height:1.7"></textarea>
+  </div>
+  <p class="hint">The PDF will automatically split this into separate day cards at each "Day 1", "Day 2" etc. marker. You can use any symbols, arrows, bullet points — they will all appear correctly.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -323,20 +308,6 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
   </div>
 </div>
 
-<!-- Properties -->
-<div class="card">
-  <div class="card-title">🏨 Property Selector (B2B Rates)
-    <span style="font-size:.7rem;font-weight:400;color:var(--muted);margin-left:6px">Skip if lodging filled above</span>
-  </div>
-  <!--
-    ══ EDIT B2B PROPERTY RATES ══
-    Find PROPERTY_DATA in the <script> below.
-    Change b2bRate = your net cost per room per night in Rs.
-  -->
-  <div class="rtabs" id="rtabs"></div>
-  <div class="pgrid" id="pgrid"></div>
-</div>
-
 <!-- Extras -->
 <div class="card">
   <div class="card-title">➕ Extras & Miscellaneous</div>
@@ -386,70 +357,31 @@ textarea{resize:vertical;min-height:68px;line-height:1.6}
 </div><!-- /wrap -->
 
 <script>
-// ══════════════════════════════════════════════════════════
-// PROPERTY DATA — EDIT B2B RATES HERE
-// b2bRate = your net cost per room per night in Rs.
-// ══════════════════════════════════════════════════════════
-const PROPERTY_DATA = [
-  // ── DARJEELING ──
-  {name:"Dekeling Hotel",        loc:"Darjeeling", region:"Darjeeling", b2bRate:2500},
-  {name:"Mayfair Darjeeling",    loc:"Darjeeling", region:"Darjeeling", b2bRate:6500},
-  {name:"Cedar Inn",             loc:"Darjeeling", region:"Darjeeling", b2bRate:3200},
-  {name:"Elgin Hotel",           loc:"Darjeeling", region:"Darjeeling", b2bRate:5800},
-  {name:"Cochrane Place",        loc:"Darjeeling", region:"Darjeeling", b2bRate:4200},
-  {name:"Property 6 (Darj.)",    loc:"Darjeeling", region:"Darjeeling", b2bRate:0},
-  // ── KALIMPONG ──
-  {name:"Himalayan Hotel",       loc:"Kalimpong",  region:"Kalimpong",  b2bRate:3500},
-  {name:"Silver Oaks",           loc:"Kalimpong",  region:"Kalimpong",  b2bRate:4200},
-  {name:"Kalimpong Park Hotel",  loc:"Kalimpong",  region:"Kalimpong",  b2bRate:2800},
-  {name:"Property 4 (Kalim.)",   loc:"Kalimpong",  region:"Kalimpong",  b2bRate:0},
-  // ── SIKKIM ──
-  {name:"Mayfair Gangtok",       loc:"Gangtok",    region:"Sikkim",     b2bRate:7000},
-  {name:"Norkhill Hotel",        loc:"Gangtok",    region:"Sikkim",     b2bRate:4500},
-  {name:"Modern Central Hotel",  loc:"Gangtok",    region:"Sikkim",     b2bRate:2600},
-  {name:"The Elgin Mt Pandim",   loc:"Pelling",    region:"Sikkim",     b2bRate:6000},
-  {name:"Kabur Resort",          loc:"Ravangla",   region:"Sikkim",     b2bRate:3200},
-  {name:"Property 6 (Sikkim)",   loc:"Sikkim",     region:"Sikkim",     b2bRate:0},
-  // ── DOOARS ──
-  {name:"Jungle Camp Lataguri",  loc:"Lataguri",   region:"Dooars",     b2bRate:3800},
-  {name:"Gorumara Forest Stay",  loc:"Gorumara",   region:"Dooars",     b2bRate:2900},
-  {name:"Chalsa River Camp",     loc:"Chalsa",     region:"Dooars",     b2bRate:2200},
-  {name:"Bindu Eco Retreat",     loc:"Bindu",      region:"Dooars",     b2bRate:3100},
-  {name:"Property 5 (Dooars)",   loc:"Dooars",     region:"Dooars",     b2bRate:0},
-  {name:"Property 6 (Dooars)",   loc:"Dooars",     region:"Dooars",     b2bRate:0},
-];
-// ══════════════════════════════════════════════════════════
-
-let selProps = new Set();
-let extraCount = 0, itinCount = 0;
+let extraCount = 0;
 
 window.onload = () => {
-  buildRegionTabs(); buildPropGrid('All');
   rebuildAll();
-  // bind chip clicks
   document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('on')));
-  // default date
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('tripStart').value = today;
 };
 
 function rebuildAll() { rebuildDaysTable(); recalculate(); }
 
-// ── ITINERARY ──────────────────────────────────────────────
-function addItinDay() {
-  itinCount++;
-  const id = itinCount;
-  const div = document.createElement('div');
-  div.className = 'itin-day'; div.id = `itin_${id}`;
-  div.innerHTML = `
-    <div class="itin-day-num">DAY<br>${id}</div>
-    <textarea id="itinText_${id}" placeholder="e.g. Arrive NJP, drive to Gangtok via Teesta Valley. Check-in at hotel. Evening stroll at MG Marg."></textarea>
-    <button class="btn-rm" onclick="removeItinDay(${id})" title="Remove">✕</button>`;
-  document.getElementById('itinList').appendChild(div);
-}
-
-function removeItinDay(id) {
-  document.getElementById(`itin_${id}`)?.remove();
+// ── ITINERARY — parse raw text into day array ──────────────
+function parseItinerary() {
+  const raw = document.getElementById('itinRaw')?.value || '';
+  if (!raw.trim()) return [];
+  // Split on "Day N" markers (case-insensitive, handles "Day 1:", "Day 1 -", "Day 1 —" etc.)
+  const parts = raw.split(/(?=\bday\s+\d+\b)/i).map(s => s.trim()).filter(Boolean);
+  return parts.map(part => {
+    // Extract day number from beginning
+    const numMatch = part.match(/^day\s+(\d+)/i);
+    const dayNum = numMatch ? parseInt(numMatch[1]) : null;
+    // Text is everything after "Day N" and optional punctuation/whitespace
+    const txt = part.replace(/^day\s+\d+\s*[:\-–—]?\s*/i, '').trim();
+    return { day: dayNum, txt };
+  }).filter(d => d.dayNum !== null && d.txt);
 }
 
 // ── DAYS TABLE ─────────────────────────────────────────────
@@ -496,41 +428,6 @@ function copyDayFwd(from) {
   }
   const btn = document.querySelector(`#daysBody tr:nth-child(${from}) .cfwd-btn`);
   if (btn) { btn.textContent='✓'; btn.style.background='var(--green-lt)'; setTimeout(()=>{btn.textContent='▶ Apply';btn.style.background='';},1200); }
-  recalculate();
-}
-
-// ── PROPERTIES ─────────────────────────────────────────────
-function buildRegionTabs() {
-  const regions=['All',...new Set(PROPERTY_DATA.map(p=>p.region))];
-  document.getElementById('rtabs').innerHTML=regions.map(r=>
-    `<button class="rtab ${r==='All'?'on':''}" onclick="filterRegion(this,'${r}')">${r}</button>`
-  ).join('');
-}
-function filterRegion(el,region) {
-  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
-  el.classList.add('on'); buildPropGrid(region);
-}
-function buildPropGrid(region) {
-  const list=region==='All'?PROPERTY_DATA:PROPERTY_DATA.filter(p=>p.region===region);
-  document.getElementById('pgrid').innerHTML=list.map(p=>{
-    const idx=PROPERTY_DATA.indexOf(p); const sel=selProps.has(idx);
-    return `<div class="pcard ${sel?'on':''}" onclick="toggleProp(${idx},this)">
-      <div class="pregion">${p.region}</div>
-      <div class="pname">${p.name}</div>
-      <div class="ploc">📍 ${p.loc}</div>
-      <div class="prate">B2B: <strong>${p.b2bRate>0?'Rs.'+p.b2bRate.toLocaleString('en-IN')+'/rm/nt':'Rate not set'}</strong></div>
-      <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
-        <label style="font-size:.7rem;color:var(--muted);white-space:nowrap">Nights:</label>
-        <input type="number" id="pNights_${idx}" value="1" min="1" max="20"
-          style="width:55px;font-size:.8rem;padding:4px 7px;border:1.5px solid var(--border);border-radius:6px;background:#fafaf8"
-          onclick="event.stopPropagation()" oninput="recalculate()">
-      </div>
-    </div>`;
-  }).join('');
-}
-function toggleProp(idx,el) {
-  if(selProps.has(idx)){selProps.delete(idx);el.classList.remove('on');}
-  else{selProps.add(idx);el.classList.add('on');}
   recalculate();
 }
 
@@ -584,16 +481,6 @@ function recalculate() {
   // transport — single total
   const totCar=parseFloat(document.getElementById('totalCarCost')?.value)||0;
 
-  // properties
-  let totProp=0; const propRows=[];
-  selProps.forEach(idx=>{
-    const p=PROPERTY_DATA[idx];
-    const n=parseInt(document.getElementById(`pNights_${idx}`)?.value)||1;
-    const cost=p.b2bRate*rooms*n;
-    totProp+=cost;
-    propRows.push({name:p.name,rate:p.b2bRate,rooms,nights:n,total:cost});
-  });
-
   // extras
   let totExtras=0; const extraRows=[];
   for(let i=1;i<=extraCount;i++){
@@ -603,7 +490,7 @@ function recalculate() {
     totExtras+=amt; extraRows.push({desc,amt});
   }
 
-  const base=totFood+totAdultLodge+totChildCost+totCar+totProp+totExtras;
+  const base=totFood+totAdultLodge+totChildCost+totCar+totExtras;
   const selling=base*(1+markupPct/100);
   const perHead=totalPax>0?selling/totalPax:0;
 
@@ -613,7 +500,6 @@ function recalculate() {
     {l:'Lodging (Adults)',v:rf(totAdultLodge)},
     {l:`Children (${numChildren})`,v:rf(totChildCost)},
     {l:'Transport',v:rf(totCar)},
-    {l:'Properties',v:rf(totProp)},
     {l:'Extras',v:rf(totExtras)},
     {l:`Markup (${markupPct}%)`,v:rf(selling-base)},
   ].map(x=>`<div class="sum-item"><div class="sl">${x.l}</div><div class="sv">${x.v}</div></div>`).join('');
@@ -621,16 +507,16 @@ function recalculate() {
   document.getElementById('perHeadLine').textContent=`${totalPax} pax — ${rf(perHead)} / head`;
   document.getElementById('markupResult').innerHTML=`Selling Price: <strong>${rf(selling)}</strong> &nbsp;|&nbsp; Profit: <strong style="color:var(--gold-dk)">${rf(selling-base)}</strong>`;
 
-  buildBreakdown(dayRows,totCar,propRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
-    totFood,totAdultLodge,totCar,totProp,totExtras,base,selling,markupPct);
+  buildBreakdown(dayRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
+    totFood,totAdultLodge,totCar,totExtras,base,selling,markupPct);
 
   window._cd={nights,days,adults,numChildren,rooms,markupPct,totalPax,
-    totFood,totAdultLodge,totChildCost,totCar,totProp,totExtras,
-    base,selling,perHead,dayRows,propRows,extraRows};
+    totFood,totAdultLodge,totChildCost,totCar,totExtras,
+    base,selling,perHead,dayRows,extraRows};
 }
 
-function buildBreakdown(dayRows,totCar,propRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
-  totFood,totAdultLodge,_totCar,totProp,totExtras,base,selling,mkp){
+function buildBreakdown(dayRows,extraRows,numChildren,childFoodTotal,childLodgeTotal,totChildCost,adults,
+  totFood,totAdultLodge,totCar,totExtras,base,selling,mkp){
   const tbl=document.getElementById('bkTable');
   const row=(l,a,c='')=>`<tr class="${c}"><td class="bl">${l}</td><td class="ba">${a===''?'':rf(a)}</td></tr>`;
   const sec=t=>`<tr class="bs"><td colspan="2" class="bl" style="font-size:.7rem;letter-spacing:1px;text-transform:uppercase;padding-top:12px">${t}</td></tr>`;
@@ -646,11 +532,6 @@ function buildBreakdown(dayRows,totCar,propRows,extraRows,numChildren,childFoodT
     h+=row(`${numChildren} child(ren) x Food Rs.${childFoodTotal} + Lodge Rs.${childLodgeTotal} each`,totChildCost);
   }
   if(totCar>0){ h+=sec('Transport'); h+=row('Total Transport Cost',totCar,'bs'); }
-  if(propRows.length>0){
-    h+=sec('Properties (B2B)');
-    propRows.forEach(r=>h+=row(`${r.name} ${r.rooms}rm x ${r.nights}nt @ Rs.${r.rate}`,r.total));
-    h+=row('Properties Subtotal',totProp,'bs');
-  }
   if(extraRows.length>0){
     h+=sec('Extras');
     extraRows.forEach(r=>h+=row(r.desc,r.amt));
@@ -675,14 +556,12 @@ function resetAll() {
   document.getElementById('childLodgeTotal').value=0;
   document.getElementById('totalCarCost').value=0;
   document.getElementById('markupPct').value=15;
-  document.getElementById('itinList').innerHTML='';
+  document.getElementById('itinRaw').value='';
   document.getElementById('extrasList').innerHTML='';
   document.getElementById('customIncl').value='';
   document.getElementById('customExcl').value='';
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  extraCount=0; itinCount=0;
-  selProps.clear();
-  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('on'));
+  extraCount=0;
   rebuildAll();
 }
 
@@ -814,14 +693,8 @@ function generatePDF() {
   y += boxH + 8;
 
   // ── ITINERARY ──────────────────────────────────────────
-  // Collect itin days
-  const itinDays=[];
-  for(let i=1;i<=itinCount;i++){
-    const el=document.getElementById(`itinText_${i}`);
-    if(!el) continue;
-    const txt=el.value.trim();
-    if(txt) itinDays.push({day:i,txt});
-  }
+  // Parse from single textarea — splits on Day 1, Day 2 etc.
+  const itinDays = parseItinerary();
 
   if(itinDays.length>0){
     checkPage(18);
