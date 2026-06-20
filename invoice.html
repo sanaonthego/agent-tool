@@ -1,1 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sana On The Go — Invoice & Receipt Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g1:#0d2318;--g2:#1a3d2b;--g3:#2d6a4f;--g4:#52b788;--g5:#95d5b2;
+  --gold:#c9a84c;--gold-lt:#e8c97a;--gold-dk:#8a6520;
+  --bg:#edeae3;--card:#fff;--text:#1a1a1a;--muted:#6b6b6b;
+  --border:#d8d3ca;--radius:12px;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.07);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);
+  --red:#b83232;--red-lt:#fef2f2;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;line-height:1.55}
 
+/* ── HEADER ── */
+.tool-header{background:linear-gradient(135deg,#080f0c 0%,var(--g2) 100%);padding:.85rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;border-bottom:2px solid var(--g3)}
+.brand{font-family:'Playfair Display',serif;font-size:1.1rem;color:#fff;display:flex;align-items:center;gap:.5rem}
+.brand::before{content:'';width:7px;height:7px;background:var(--g4);border-radius:50%;display:inline-block}
+.brand span{color:var(--g4)}
+.badge{background:rgba(82,183,136,.15);border:1px solid rgba(82,183,136,.35);color:var(--g4);font-size:.78rem;padding:.28rem .8rem;border-radius:20px;font-weight:600}
+
+/* ── TABS ── */
+.tab-bar{background:var(--g1);display:flex;gap:0;border-bottom:3px solid var(--g3)}
+.tab-btn{padding:.85rem 2rem;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;color:rgba(255,255,255,.55);background:transparent;border:none;cursor:pointer;transition:all .2s;position:relative;letter-spacing:.2px}
+.tab-btn:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.04)}
+.tab-btn.active{color:#fff;background:rgba(82,183,136,.12)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:3px;background:var(--g4);border-radius:2px 2px 0 0}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── LAYOUT ── */
+.page-wrap{max-width:1120px;margin:0 auto;padding:2rem 1.5rem}
+.page-title{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--g2);margin-bottom:.25rem}
+.page-sub{color:var(--muted);font-size:.92rem;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.two-col{display:grid;grid-template-columns:1fr 350px;gap:1.75rem;align-items:start}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.2rem;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--shadow-md)}
+.card-head{background:linear-gradient(135deg,var(--g2),var(--g3));color:#fff;padding:.8rem 1.2rem;display:flex;align-items:center;gap:.55rem;border-bottom:2px solid rgba(82,183,136,.4)}
+.card-head h3{font-size:.95rem;font-weight:600;letter-spacing:.2px}
+.card-head .icon{font-size:1.05rem}
+.card-body{padding:1.2rem}
+
+/* ── FORMS ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem}
+.form-row.triple{grid-template-columns:1fr 1fr 1fr}
+.form-row.single{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:.32rem}
+.form-group label{font-size:.78rem;font-weight:700;color:var(--g3);letter-spacing:.4px;text-transform:uppercase}
+.form-group input,.form-group select,.form-group textarea{padding:.65rem .82rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.97rem;color:var(--text);background:#faf9f6;transition:border-color .2s,box-shadow .2s;width:100%}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--g3);box-shadow:0 0 0 3px rgba(45,106,79,.1);background:#fff}
+.form-group textarea{resize:vertical;min-height:4.5rem;line-height:1.6}
+.form-hint{font-size:.76rem;color:var(--muted);margin-top:.2rem}
+.section-note{font-size:.82rem;color:var(--muted);background:#f7f4ef;border-radius:7px;padding:.55rem .85rem;margin-bottom:.8rem;border-left:3px solid var(--g4);line-height:1.55}
+
+/* ── COST FIELDS ── */
+.cost-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;margin-bottom:.9rem}
+.cost-field{border-radius:10px;padding:.85rem 1rem;border:2px solid var(--border);background:#faf9f6;transition:border-color .2s}
+.cost-field:focus-within{border-color:var(--g3)}
+.cost-field label{display:block;font-size:.75rem;font-weight:700;color:var(--g3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.4rem}
+.cost-field input{width:100%;border:none;background:transparent;font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--text);padding:0;outline:none}
+.cost-field.cf-total{border-color:#c9a84c;background:linear-gradient(135deg,#fffbf0,#fdf5e0)}
+.cost-field.cf-total label{color:var(--gold-dk)}
+.cost-field.cf-total input{color:var(--gold-dk)}
+.cost-field.cf-advance{border-color:var(--g4);background:linear-gradient(135deg,#f0faf5,#e8f7ee)}
+.cost-field.cf-advance input{color:var(--g3)}
+.cost-field.cf-balance{border-color:#e07070;background:linear-gradient(135deg,#fff5f5,#fee8e8)}
+.cost-field.cf-balance label{color:var(--red)}
+.cost-field.cf-balance input{color:var(--red)}
+.cost-field .cs{font-size:.75rem;color:var(--muted);margin-top:.28rem}
+.perhead-row{background:linear-gradient(135deg,#f0faf5,#e8f7ee);border:1px solid var(--g4);border-radius:9px;padding:.7rem 1rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.perhead-row .lbl{font-size:.88rem;color:var(--g2);font-weight:500}
+.perhead-row .val{font-size:1.05rem;font-weight:700;color:var(--g2);font-family:'Playfair Display',serif}
+
+/* ── ITINERARY PASTE AREA ── */
+.itin-paste-area{width:100%;min-height:120px;padding:.75rem .9rem;border:2px dashed var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.97rem;color:var(--text);background:#fefefe;line-height:1.65;resize:vertical;transition:border-color .2s}
+.itin-paste-area:focus{outline:none;border-color:var(--g3);border-style:solid;background:#fff}
+.btn-parse{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.35rem;background:var(--g3);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:.65rem}
+.btn-parse:hover{background:var(--g2);transform:translateY(-1px)}
+
+/* ── DAY CARDS (parsed) ── */
+.parsed-days{display:flex;flex-direction:column;gap:.9rem;margin-top:1rem}
+.day-item{background:#fafaf8;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.day-header{background:linear-gradient(135deg,var(--g2),#2a5e46);color:#fff;padding:.65rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.55rem}
+.day-header-left{display:flex;align-items:center;gap:.6rem;flex:1;min-width:0}
+.day-num-badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:.22rem .6rem;font-size:.75rem;font-weight:700;letter-spacing:1.5px;white-space:nowrap;flex-shrink:0}
+.day-label-input{background:transparent;border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:.97rem;font-weight:600;flex:1;min-width:0;outline:none}
+.day-label-input::placeholder{color:rgba(255,255,255,.38)}
+.btn-rm-day{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.8);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.btn-rm-day:hover{background:rgba(200,50,50,.5);border-color:rgba(220,80,80,.5);color:#fff}
+.day-body{padding:.85rem 1rem;display:flex;flex-direction:column;gap:.7rem}
+.day-desc{resize:vertical;min-height:5rem;font-size:.97rem;width:100%;padding:.62rem .82rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;transition:border-color .2s,box-shadow .2s;line-height:1.6}
+.day-desc:focus{outline:none;border-color:var(--g3);box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.btn-add-day{display:inline-flex;align-items:center;gap:.45rem;background:#f0faf5;border:1.5px dashed var(--g4);color:var(--g3);padding:.6rem 1rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;margin-top:.4rem;transition:all .2s}
+.btn-add-day:hover{background:#e0f5ea;border-color:var(--g3)}
+
+/* ── DAY IE ── */
+.day-ie{border-top:1px solid #e8e4dd;padding-top:.7rem;display:flex;flex-direction:column;gap:.6rem}
+.day-ie-block{background:#faf9f6;border-radius:8px;padding:.65rem .85rem;border:1px solid #eae5dc}
+.day-ie-block label{font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:.45rem}
+.day-ie-block.incl-block{border-left:3px solid var(--g4)}
+.day-ie-block.excl-block{border-left:3px solid #e07070}
+.day-chips{display:flex;flex-wrap:wrap;gap:.38rem;margin-bottom:.5rem}
+.dchip{padding:.32rem .78rem;border-radius:20px;font-size:.84rem;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;transition:all .15s;color:var(--muted);user-select:none}
+.dchip:hover{border-color:var(--g3);color:var(--g3);background:#eaf5ee}
+.dchip.di{background:var(--g3);border-color:var(--g3);color:#fff}
+.dchip.de{background:var(--red);border-color:var(--red);color:#fff}
+.day-custom{font-size:.93rem;width:100%;padding:.48rem .72rem;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;resize:none;min-height:2.5rem;line-height:1.5}
+.day-custom:focus{outline:none;border-color:var(--g3);box-shadow:0 0 0 2px rgba(45,106,79,.1)}
+
+/* ── GLOBAL CHIPS ── */
+.chip-row{display:flex;flex-wrap:wrap;gap:.42rem;margin-bottom:.72rem}
+.qchip{padding:.38rem .88rem;border-radius:20px;font-size:.88rem;font-weight:600;border:1.5px solid var(--border);background:#faf9f6;cursor:pointer;transition:all .15s;color:var(--text);user-select:none}
+.qchip:hover{border-color:var(--g3);color:var(--g3);background:#eaf5ee}
+.qchip.active{background:var(--g3);border-color:var(--g3);color:#fff;box-shadow:0 2px 6px rgba(45,106,79,.25)}
+
+/* ── PREVIEW PANEL ── */
+.preview-panel{position:sticky;top:16px}
+.preview-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)}
+.pv-hdr{background:linear-gradient(160deg,var(--g1) 0%,var(--g2) 60%,var(--g3) 100%);padding:1.2rem;color:#fff;border-bottom:2px solid rgba(82,183,136,.4)}
+.pv-hdr .pv-brand{font-family:'Playfair Display',serif;font-size:1.05rem;letter-spacing:.2px}
+.pv-hdr .pv-sub{font-size:.78rem;color:rgba(255,255,255,.58);margin-top:.12rem}
+.pv-hdr .pv-ref{margin-top:.8rem;font-size:.76rem;color:rgba(255,255,255,.52);letter-spacing:.4px;text-transform:uppercase}
+.pv-hdr .pv-client{font-family:'Playfair Display',serif;font-size:1.2rem;margin-top:.12rem}
+.pv-body{padding:.95rem}
+.pv-row{display:flex;justify-content:space-between;font-size:.84rem;padding:.38rem 0;border-bottom:1px solid #f2ede6}
+.pv-row:last-of-type{border-bottom:none}
+.pv-row .lbl{color:var(--muted);flex-shrink:0}
+.pv-row .val{font-weight:600;text-align:right;max-width:58%;word-break:break-word;color:var(--text)}
+.pv-total{background:linear-gradient(135deg,var(--gold-dk),var(--gold));color:#fff;border-radius:9px;padding:.72rem 1rem;display:flex;justify-content:space-between;align-items:center;margin-top:.72rem;box-shadow:0 3px 10px rgba(160,120,48,.3)}
+.pv-total .lbl{font-size:.8rem;opacity:.88}
+.pv-total .amt{font-family:'Playfair Display',serif;font-size:1.18rem;font-weight:700}
+.pv-days{margin-top:.72rem}
+.pv-day{font-size:.82rem;color:var(--muted);padding:.32rem 0;border-bottom:1px solid #f5f3ee;display:flex;gap:.45rem;line-height:1.42}
+.pv-day .dl{color:var(--g3);font-weight:700;flex-shrink:0;font-size:.74rem;letter-spacing:.4px;padding-top:1px}
+
+/* ── GENERATE BUTTON ── */
+.btn-gen{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;padding:.95rem;border-radius:10px;border:none;background:linear-gradient(135deg,var(--g2),var(--g3));color:#fff;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(45,106,79,.4);margin-top:.95rem;letter-spacing:.3px}
+.btn-gen:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(45,106,79,.5)}
+.btn-gen:active{transform:translateY(0)}
+.btn-gen svg{width:18px;height:18px;fill:#fff;flex-shrink:0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.75rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--g2);color:#fff;padding:.82rem 1.5rem;border-radius:50px;font-size:.92rem;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25);border:1px solid rgba(82,183,136,.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── RECEIPT-SPECIFIC ── */
+.receipt-mode-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(82,183,136,.12);border:1.5px solid var(--g4);color:var(--g2);padding:.35rem .9rem;border-radius:20px;font-size:.8rem;font-weight:700;margin-bottom:1.2rem;letter-spacing:.3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:940px){.two-col{grid-template-columns:1fr}.preview-panel{position:static}.tool-header{padding:.8rem 1.1rem}.tab-btn{padding:.75rem 1.25rem;font-size:.88rem}}
+@media(max-width:640px){.form-row,.form-row.triple{grid-template-columns:1fr}.cost-fields{grid-template-columns:1fr}}
+@media(max-width:480px){html{font-size:18px}.page-wrap{padding:1.2rem .9rem}.card-body{padding:.95rem}.day-body{padding:.8rem .88rem}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="tool-header">
+  <div class="brand">Sana On The Go <span>/ Document Generator</span></div>
+  <span class="badge">🔒 PRIVATE</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('invoice',this)">📄 Final Invoice</button>
+  <button class="tab-btn" onclick="switchTab('receipt',this)">🧾 Advance Receipt</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB 1: INVOICE
+═══════════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-invoice">
+<div class="page-wrap">
+  <h1 class="page-title">Generate Final Invoice</h1>
+  <p class="page-sub">For clients who have completed their trip or for final billing. Produces a professional full-page invoice PDF.</p>
+
+  <div class="two-col">
+    <div>
+
+      <!-- CLIENT -->
+      <div class="card">
+        <div class="card-head"><span class="icon">👤</span><h3>Client Details</h3></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label>Client Full Name *</label><input type="text" id="inv-clientName" placeholder="e.g. Arunava Roy" oninput="updateInvPreview()"></div>
+            <div class="form-group"><label>Phone / WhatsApp</label><input type="text" id="inv-clientPhone" placeholder="+91 98XXX XXXXX"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="inv-clientEmail" placeholder="client@email.com"></div>
+            <div class="form-group"><label>City / State</label><input type="text" id="inv-clientCity" placeholder="e.g. Kolkata, West Bengal"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Invoice Number *</label><input type="text" id="inv-invoiceNo" placeholder="SOTG-INV-2026-001" oninput="updateInvPreview()"></div>
+            <div class="form-group"><label>Invoice Date *</label><input type="date" id="inv-invoiceDate"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRIP -->
+      <div class="card">
+        <div class="card-head"><span class="icon">🏔️</span><h3>Trip Details</h3></div>
+        <div class="card-body">
+          <div class="form-row single">
+            <div class="form-group"><label>Package / Trip Name *</label><input type="text" id="inv-tripName" placeholder="e.g. Sandakphu Trek 4N/5D" oninput="updateInvPreview()"></div>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>Travel Start Date</label><input type="date" id="inv-travelStart" oninput="updateInvPreview();calcDuration('inv')"></div>
+            <div class="form-group"><label>Travel End Date</label><input type="date" id="inv-travelEnd" oninput="updateInvPreview();calcDuration('inv')"></div>
+            <div class="form-group"><label>Duration (auto)</label><input type="text" id="inv-duration" placeholder="Auto-calculated" readonly style="background:#f0f0ed;color:var(--muted)"></div>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>No. of Adults</label><input type="number" id="inv-numAdults" min="0" value="2" oninput="updateInvCostCalc()"></div>
+            <div class="form-group"><label>No. of Children</label><input type="number" id="inv-numChildren" min="0" value="0" oninput="updateInvPreview()"></div>
+            <div class="form-group"><label>No. of Rooms</label><input type="number" id="inv-numRooms" min="1" value="1" oninput="updateInvPreview()"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Accommodation Type</label>
+              <select id="inv-accomType">
+                <option>Standard Hotel (3-star)</option>
+                <option>Heritage Property</option>
+                <option>Homestay</option>
+                <option>Resort</option>
+                <option>Mix of Hotel & Homestay</option>
+                <option>Luxury Resort</option>
+                <option>Forest Lodge</option>
+                <option>Trek Hut / Guesthouse</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Places Covered</label><input type="text" id="inv-destinations" placeholder="e.g. Tumling, Sandakphu, Thakum" oninput="updateInvPreview()"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pickup / Drop Point</label>
+              <select id="inv-pickupDropSel" onchange="handlePickup('inv',this)">
+                <option value="NJP Railway Station">NJP Railway Station</option>
+                <option value="Siliguri Station">Siliguri Station</option>
+                <option value="Bagdogra Airport">Bagdogra Airport</option>
+                <option value="New Mal Junction">New Mal Junction</option>
+                <option value="__custom__">Other (type below)...</option>
+              </select>
+              <input type="text" id="inv-pickupDrop" value="NJP Railway Station" placeholder="Custom location" oninput="updateInvPreview()" style="display:none;margin-top:6px">
+            </div>
+            <div class="form-group"><label>Transport Type</label>
+              <select id="inv-transport">
+                <option>Innova Crysta / SUV</option>
+                <option>Bolero / Tata Sumo</option>
+                <option>Shared Jeep</option>
+                <option>Private Sedan</option>
+                <option>Mini-bus</option>
+                <option>Bus + Jeep Combination</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITINERARY -->
+      <div class="card">
+        <div class="card-head"><span class="icon">📋</span><h3>Day-by-Day Itinerary</h3></div>
+        <div class="card-body">
+          <p class="section-note">Paste your entire itinerary in the box below and click <strong>Parse Itinerary</strong>. The tool will automatically detect day breaks by looking for patterns like "Day 1", "DAY 2", "D1:", "Day-3" etc. You can also add days manually.</p>
+          <div class="form-group" style="margin-bottom:.65rem">
+            <label>Paste Full Itinerary Text</label>
+            <textarea class="itin-paste-area" id="inv-itin-raw" placeholder="Day 1: Arrival at NJP. Transfer to Maneybhanjang. Check-in. Dinner.&#10;&#10;Day 2: Trek to Tumling via Meghma. Stunning views of Kanchenjunga. Overnight homestay.&#10;&#10;Day 3: Trek to Sandakphu. Sunrise views. ..." rows="6"></textarea>
+          </div>
+          <button class="btn-parse" onclick="parseItinerary('inv')">⚡ Parse Itinerary</button>
+          <div class="parsed-days" id="inv-dayList"></div>
+          <button class="btn-add-day" onclick="addDay('inv','','')" style="margin-top:.75rem">+ Add Day Manually</button>
+        </div>
+      </div>
+
+      <!-- COST -->
+      <div class="card">
+        <div class="card-head"><span class="icon">💰</span><h3>Cost & Payment Details</h3></div>
+        <div class="card-body">
+          <div class="cost-fields">
+            <div class="cost-field cf-total">
+              <label>Total Package Cost (₹)</label>
+              <input type="number" id="inv-totalCost" min="0" placeholder="0" oninput="updateInvCostCalc()">
+              <div class="cs">Full trip cost</div>
+            </div>
+            <div class="cost-field cf-advance">
+              <label>Advance Paid (₹)</label>
+              <input type="number" id="inv-advancePaid" min="0" placeholder="0" oninput="updateInvCostCalc()">
+              <div class="cs">Amount received</div>
+            </div>
+            <div class="cost-field cf-balance">
+              <label>Balance Due (₹)</label>
+              <input type="number" id="inv-balanceDue" min="0" placeholder="Auto" oninput="updateInvPreview()">
+              <div class="cs">Auto-fills or override</div>
+            </div>
+          </div>
+          <div class="perhead-row">
+            <span class="lbl">Per Head Cost (adults)</span>
+            <span class="val" id="inv-perHeadDisplay">—</span>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>Advance Received On</label><input type="date" id="inv-advanceDate"></div>
+            <div class="form-group"><label>Balance Paid On</label><input type="date" id="inv-balancePaidDate"><span class="form-hint">Leave blank if still pending</span></div>
+            <div class="form-group"><label>Payment Method</label>
+              <select id="inv-payMethod">
+                <option>UPI / GPay</option>
+                <option>Bank Transfer</option>
+                <option>Cash</option>
+                <option>PhonePe</option>
+                <option>Cheque</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INCLUSIONS -->
+      <div class="card">
+        <div class="card-head"><span class="icon">✅</span><h3>Overall Inclusions</h3></div>
+        <div class="card-body">
+          <p class="section-note">These appear in the main INCLUDED section of the invoice. Use the chips inside each Day card for day-specific items.</p>
+          <div class="chip-row" id="inv-incl-chips">
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Accommodation</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">All Meals</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Breakfast</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Dinner</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">All Transfers</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Entry Fees</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Local Guide</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Permits (ILP/PAP)</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Toy Train Joyride</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">24/7 Support</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-incl')">Bonfire Evening</span>
+          </div>
+          <div class="form-group">
+            <label>Additional Inclusions (one per line)</label>
+            <textarea id="inv-customIncl" placeholder="e.g. Tea garden visit with tasting"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXCLUSIONS -->
+      <div class="card">
+        <div class="card-head"><span class="icon">❌</span><h3>Overall Exclusions</h3></div>
+        <div class="card-body">
+          <div class="chip-row" id="inv-excl-chips">
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Flights / Trains</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Lunch</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Travel Insurance</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Personal Expenses</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Medical Expenses</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Snow Vehicle Charges</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Porter / Trekking Gear</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Optional Activities</span>
+            <span class="qchip" onclick="toggleGChip(this,'inv-excl')">Any cost due to Natural Calamity</span>
+          </div>
+          <div class="form-group">
+            <label>Additional Exclusions (one per line)</label>
+            <textarea id="inv-customExcl" placeholder="One per line"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- POLICIES -->
+      <div class="card">
+        <div class="card-head"><span class="icon">📜</span><h3>Policies & Notes</h3></div>
+        <div class="card-body">
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Cancellation Policy</label>
+              <textarea id="inv-cancelPolicy" style="min-height:90px">15+ days before travel: Full refund
+7-14 days before travel: 50% refund
+Under 7 days: No refund
+Force majeure / natural disaster: Full credit note valid for 12 months</textarea>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Terms & Conditions / Special Notes</label>
+              <textarea id="inv-specialNotes" placeholder="e.g. Rates subject to change based on seasonal pricing and availability."></textarea>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Personal Message to Client</label>
+              <textarea id="inv-personalMsg" style="min-height:90px">Thank you for choosing Sana On The Go - Into The Wild Tour and Travels! We are delighted to have you with us and look forward to curating an unforgettable Himalayan experience for you. Every detail of your journey has been thoughtfully planned. Should you need anything before or during your trip, do not hesitate to reach out on WhatsApp. Wishing you a truly wonderful trip ahead!</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- RIGHT PREVIEW -->
+    <div class="preview-panel">
+      <div class="preview-card">
+        <div class="pv-hdr">
+          <div class="pv-brand">Sana On The Go</div>
+          <div class="pv-sub">Into The Wild Tour and Travels</div>
+          <div class="pv-ref" id="inv-pv-ref">—</div>
+          <div class="pv-client" id="inv-pv-client">Client Name</div>
+        </div>
+        <div class="pv-body">
+          <div class="pv-row"><span class="lbl">Trip</span><span class="val" id="inv-pv-trip">—</span></div>
+          <div class="pv-row"><span class="lbl">Dates</span><span class="val" id="inv-pv-dates">—</span></div>
+          <div class="pv-row"><span class="lbl">Duration</span><span class="val" id="inv-pv-dur">—</span></div>
+          <div class="pv-row"><span class="lbl">Pax</span><span class="val" id="inv-pv-persons">—</span></div>
+          <div class="pv-row"><span class="lbl">Places</span><span class="val" id="inv-pv-dest">—</span></div>
+          <div class="pv-total">
+            <span class="lbl">Invoice Total</span>
+            <span class="amt" id="inv-pv-total">₹0</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div style="background:#eaf5ee;border-radius:7px;padding:9px;text-align:center">
+              <div style="font-size:.62rem;color:#2d6a4f;font-weight:700;text-transform:uppercase;margin-bottom:2px">Advance</div>
+              <div style="font-size:.9rem;font-weight:700;color:#2d6a4f" id="inv-pv-advance">₹0</div>
+            </div>
+            <div style="background:#fef2f2;border-radius:7px;padding:9px;text-align:center">
+              <div style="font-size:.62rem;color:#b83232;font-weight:700;text-transform:uppercase;margin-bottom:2px">Balance</div>
+              <div style="font-size:.9rem;font-weight:700;color:#b83232" id="inv-pv-due">₹0</div>
+            </div>
+          </div>
+          <div class="pv-days" id="inv-pv-days"></div>
+        </div>
+      </div>
+      <button class="btn-gen" onclick="generateInvoicePDF()">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+        Download Invoice PDF
+      </button>
+      <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-top:6px">A4 · Professional Invoice · Branded</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB 2: ADVANCE RECEIPT
+═══════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-receipt">
+<div class="page-wrap">
+  <h1 class="page-title">Generate Advance Receipt</h1>
+  <p class="page-sub">Issue a booking confirmation receipt when the client pays their advance. The receipt confirms booking and includes tentative itinerary. <strong>Does not use the word "Invoice".</strong></p>
+
+  <div class="two-col">
+    <div>
+
+      <!-- CLIENT -->
+      <div class="card">
+        <div class="card-head"><span class="icon">👤</span><h3>Client Details</h3></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label>Client Full Name *</label><input type="text" id="rec-clientName" placeholder="e.g. Priya Sharma" oninput="updateRecPreview()"></div>
+            <div class="form-group"><label>Phone / WhatsApp</label><input type="text" id="rec-clientPhone" placeholder="+91 98XXX XXXXX"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="rec-clientEmail" placeholder="client@email.com"></div>
+            <div class="form-group"><label>City / State</label><input type="text" id="rec-clientCity" placeholder="e.g. Kolkata, West Bengal"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Receipt Number *</label><input type="text" id="rec-receiptNo" placeholder="SOTG-REC-2026-001" oninput="updateRecPreview()"></div>
+            <div class="form-group"><label>Receipt Date *</label><input type="date" id="rec-receiptDate"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRIP -->
+      <div class="card">
+        <div class="card-head"><span class="icon">🏔️</span><h3>Trip Details</h3></div>
+        <div class="card-body">
+          <div class="form-row single">
+            <div class="form-group"><label>Package / Trip Name *</label><input type="text" id="rec-tripName" placeholder="e.g. Darjeeling Heritage Tour 3N/4D" oninput="updateRecPreview()"></div>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>Travel Start Date</label><input type="date" id="rec-travelStart" oninput="updateRecPreview();calcDuration('rec')"></div>
+            <div class="form-group"><label>Travel End Date</label><input type="date" id="rec-travelEnd" oninput="updateRecPreview();calcDuration('rec')"></div>
+            <div class="form-group"><label>Duration (auto)</label><input type="text" id="rec-duration" placeholder="Auto-calculated" readonly style="background:#f0f0ed;color:var(--muted)"></div>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>No. of Adults</label><input type="number" id="rec-numAdults" min="0" value="2" oninput="updateRecCostCalc()"></div>
+            <div class="form-group"><label>No. of Children</label><input type="number" id="rec-numChildren" min="0" value="0" oninput="updateRecPreview()"></div>
+            <div class="form-group"><label>No. of Rooms</label><input type="number" id="rec-numRooms" min="1" value="1" oninput="updateRecPreview()"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Places Covered</label><input type="text" id="rec-destinations" placeholder="e.g. Darjeeling, Tiger Hill, Mirik" oninput="updateRecPreview()"></div>
+            <div class="form-group">
+              <label>Pickup / Drop Point</label>
+              <select id="rec-pickupDropSel" onchange="handlePickup('rec',this)">
+                <option value="NJP Railway Station">NJP Railway Station</option>
+                <option value="Siliguri Station">Siliguri Station</option>
+                <option value="Bagdogra Airport">Bagdogra Airport</option>
+                <option value="New Mal Junction">New Mal Junction</option>
+                <option value="__custom__">Other (type below)...</option>
+              </select>
+              <input type="text" id="rec-pickupDrop" value="NJP Railway Station" placeholder="Custom location" oninput="updateRecPreview()" style="display:none;margin-top:6px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITINERARY -->
+      <div class="card">
+        <div class="card-head"><span class="icon">📋</span><h3>Tentative Itinerary</h3></div>
+        <div class="card-body">
+          <p class="section-note">Paste your itinerary below and click Parse. The receipt will show it as a tentative day-by-day plan.</p>
+          <div class="form-group" style="margin-bottom:.65rem">
+            <label>Paste Itinerary Text</label>
+            <textarea class="itin-paste-area" id="rec-itin-raw" placeholder="Day 1: Arrival at NJP. Transfer to Darjeeling. Check-in.&#10;&#10;Day 2: Tiger Hill sunrise. Batasia Loop. Tea estate tour.&#10;&#10;Day 3: Mirik Lake visit. Departure." rows="6"></textarea>
+          </div>
+          <button class="btn-parse" onclick="parseItinerary('rec')">⚡ Parse Itinerary</button>
+          <div class="parsed-days" id="rec-dayList"></div>
+          <button class="btn-add-day" onclick="addDay('rec','','')" style="margin-top:.75rem">+ Add Day Manually</button>
+        </div>
+      </div>
+
+      <!-- COST -->
+      <div class="card">
+        <div class="card-head"><span class="icon">💰</span><h3>Payment Details</h3></div>
+        <div class="card-body">
+          <div class="cost-fields">
+            <div class="cost-field cf-total">
+              <label>Total Package Cost (₹)</label>
+              <input type="number" id="rec-totalCost" min="0" placeholder="0" oninput="updateRecCostCalc()">
+              <div class="cs">Full trip amount</div>
+            </div>
+            <div class="cost-field cf-advance">
+              <label>Advance Received (₹)</label>
+              <input type="number" id="rec-advancePaid" min="0" placeholder="0" oninput="updateRecCostCalc()">
+              <div class="cs">Amount confirmed</div>
+            </div>
+            <div class="cost-field cf-balance">
+              <label>Balance Pending (₹)</label>
+              <input type="number" id="rec-balanceDue" min="0" placeholder="Auto" oninput="updateRecPreview()">
+              <div class="cs">Remaining amount</div>
+            </div>
+          </div>
+          <div class="perhead-row">
+            <span class="lbl">Per Head Cost (adults)</span>
+            <span class="val" id="rec-perHeadDisplay">—</span>
+          </div>
+          <div class="form-row triple">
+            <div class="form-group"><label>Advance Received On</label><input type="date" id="rec-advanceDate"></div>
+            <div class="form-group"><label>Balance Due By</label><input type="date" id="rec-dueDate"><span class="form-hint">Usually 7 days before travel</span></div>
+            <div class="form-group"><label>Payment Method</label>
+              <select id="rec-payMethod">
+                <option>UPI / GPay</option>
+                <option>Bank Transfer</option>
+                <option>Cash</option>
+                <option>PhonePe</option>
+                <option>Cheque</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INCLUSIONS -->
+      <div class="card">
+        <div class="card-head"><span class="icon">✅</span><h3>What's Included</h3></div>
+        <div class="card-body">
+          <div class="chip-row" id="rec-incl-chips">
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Accommodation</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">All Meals</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Breakfast</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Dinner</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">All Transfers</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Entry Fees</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Local Guide</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Permits (ILP/PAP)</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">24/7 Support</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-incl')">Bonfire Evening</span>
+          </div>
+          <div class="form-group">
+            <label>Additional Inclusions (one per line)</label>
+            <textarea id="rec-customIncl" placeholder="e.g. Tea garden visit with tasting"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXCLUSIONS -->
+      <div class="card">
+        <div class="card-head"><span class="icon">❌</span><h3>What's Not Included</h3></div>
+        <div class="card-body">
+          <div class="chip-row" id="rec-excl-chips">
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Flights / Trains</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Lunch</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Travel Insurance</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Personal Expenses</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Medical Expenses</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Snow Vehicle Charges</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Porter / Trekking Gear</span>
+            <span class="qchip" onclick="toggleGChip(this,'rec-excl')">Optional Activities</span>
+          </div>
+          <div class="form-group">
+            <label>Additional Exclusions (one per line)</label>
+            <textarea id="rec-customExcl" placeholder="One per line"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- POLICIES -->
+      <div class="card">
+        <div class="card-head"><span class="icon">📜</span><h3>Policies & Notes</h3></div>
+        <div class="card-body">
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Cancellation Policy</label>
+              <textarea id="rec-cancelPolicy" style="min-height:80px">15+ days before travel: Full refund
+7-14 days before travel: 50% refund
+Under 7 days: No refund
+Force majeure: Full credit note valid for 12 months</textarea>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Important Notes</label>
+              <textarea id="rec-specialNotes" placeholder="e.g. This is a booking confirmation. Final costs may vary based on seasonal pricing."></textarea>
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="form-group">
+              <label>Personal Message to Client</label>
+              <textarea id="rec-personalMsg" style="min-height:80px">Thank you for booking with Sana On The Go - Into The Wild Tour and Travels! Your advance has been received and your booking is confirmed. We are excited to take you on this Himalayan adventure. We will be in touch with further details closer to your travel date. For any queries, please reach out on WhatsApp anytime!</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /left -->
+
+    <!-- RIGHT PREVIEW -->
+    <div class="preview-panel">
+      <div class="preview-card">
+        <div class="pv-hdr">
+          <div class="pv-brand">Sana On The Go</div>
+          <div class="pv-sub">Booking Confirmation Receipt</div>
+          <div class="pv-ref" id="rec-pv-ref">—</div>
+          <div class="pv-client" id="rec-pv-client">Client Name</div>
+        </div>
+        <div class="pv-body">
+          <div class="pv-row"><span class="lbl">Trip</span><span class="val" id="rec-pv-trip">—</span></div>
+          <div class="pv-row"><span class="lbl">Dates</span><span class="val" id="rec-pv-dates">—</span></div>
+          <div class="pv-row"><span class="lbl">Duration</span><span class="val" id="rec-pv-dur">—</span></div>
+          <div class="pv-row"><span class="lbl">Pax</span><span class="val" id="rec-pv-persons">—</span></div>
+          <div class="pv-total" style="background:linear-gradient(135deg,#1a3d2b,#2d6a4f)">
+            <span class="lbl">Advance Confirmed</span>
+            <span class="amt" id="rec-pv-advance">₹0</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div style="background:#f7f4ef;border-radius:7px;padding:9px;text-align:center">
+              <div style="font-size:.62rem;color:#6b6b6b;font-weight:700;text-transform:uppercase;margin-bottom:2px">Total Package</div>
+              <div style="font-size:.9rem;font-weight:700;color:#1a3d2b" id="rec-pv-total">₹0</div>
+            </div>
+            <div style="background:#fef2f2;border-radius:7px;padding:9px;text-align:center">
+              <div style="font-size:.62rem;color:#b83232;font-weight:700;text-transform:uppercase;margin-bottom:2px">Bal. Pending</div>
+              <div style="font-size:.9rem;font-weight:700;color:#b83232" id="rec-pv-due">₹0</div>
+            </div>
+          </div>
+          <div class="pv-days" id="rec-pv-days"></div>
+        </div>
+      </div>
+      <button class="btn-gen" onclick="generateReceiptPDF()">
+        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5z"/></svg>
+        Download Advance Receipt PDF
+      </button>
+      <div style="font-size:.7rem;color:var(--muted);text-align:center;margin-top:6px">A4 · Booking Confirmation · Branded</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const gChipSets = {};  // e.g. 'inv-incl', 'inv-excl', 'rec-incl', 'rec-excl'
+const dayIE = {};      // dayIE[dayId] = { incl: Set, excl: Set }
+let dayCounts = { inv: 0, rec: 0 };
+
+const D_INCL = ['Breakfast','Lunch','Dinner','All Meals','Accommodation','Transfers','Entry Fees','Guide','Bonfire'];
+const D_EXCL = ['Breakfast','Lunch','Dinner','Porter','Optional Activities','Personal Expenses'];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const yr = now.getFullYear().toString().slice(-2);
+  const mo = String(now.getMonth()+1).padStart(2,'0');
+  const rnd = () => String(Math.floor(Math.random()*900)+100);
+
+  ['inv','rec'].forEach(pfx => {
+    const dateEl = document.getElementById(pfx+'-'+(pfx==='inv'?'invoiceDate':'receiptDate'));
+    if(dateEl) dateEl.value = today;
+    const noEl = document.getElementById(pfx+'-'+(pfx==='inv'?'invoiceNo':'receiptNo'));
+    if(noEl) noEl.value = pfx==='inv' ? `SOTG-INV-${yr}${mo}-${rnd()}` : `SOTG-REC-${yr}${mo}-${rnd()}`;
+    gChipSets[pfx+'-incl'] = new Set();
+    gChipSets[pfx+'-excl'] = new Set();
+
+    const balEl = document.getElementById(pfx+'-balanceDue');
+    if(balEl) {
+      balEl.addEventListener('input', function(){ this.dataset.manual='1'; });
+    }
+  });
+
+  updateInvPreview();
+  updateRecPreview();
+});
+
+// ══════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// UTILITY
+// ══════════════════════════════════════════
+function fmtDate(v) {
+  if(!v) return '';
+  const [y,m,d] = v.split('-');
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${parseInt(d)} ${mo[parseInt(m)-1]} ${y}`;
+}
+function fmt(n){ return '₹'+(n||0).toLocaleString('en-IN'); }
+function fmtRs(n){ return 'Rs.'+(n||0).toLocaleString('en-IN'); }
+
+function g(id){ return document.getElementById(id); }
+
+// Strip emoji & normalize text for PDF
+function ep(str) {
+  if(!str) return '';
+  return str
+    .replace(/[→➜➔⟶⇒▶►]/g, '->')
+    .replace(/[←⟵⇐◄]/g, '<-')
+    .replace(/[•·‣◦]/g, '-')
+    .replace(/[–—]/g, '-')
+    .replace(/[""]/g, '"')
+    .replace(/['']/g, "'")
+    // Emoji ranges
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27FF}]/gu, '')
+    .replace(/[\u{2B00}-\u{2BFF}]/gu, '')
+    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+    .replace(/\uFFFD/g, '')
+    .replace(/[ \t]{2,}/g,' ')
+    .trim();
+}
+
+// ══════════════════════════════════════════
+// DURATION AUTO-CALC
+// ══════════════════════════════════════════
+function calcDuration(pfx) {
+  const s = g(pfx+'-travelStart').value;
+  const e = g(pfx+'-travelEnd').value;
+  const el = g(pfx+'-duration');
+  if(s && e) {
+    const diff = Math.round((new Date(e)-new Date(s))/86400000);
+    if(diff>0) { el.value = `${diff}N / ${diff+1}D`; }
+    else { el.value = 'Check dates'; }
+  } else { el.value = ''; }
+}
+
+// ══════════════════════════════════════════
+// PICKUP/DROP
+// ══════════════════════════════════════════
+function handlePickup(pfx, sel) {
+  const inp = g(pfx+'-pickupDrop');
+  if(sel.value==='__custom__'){ inp.style.display='block'; inp.value=''; inp.focus(); }
+  else { inp.style.display='none'; inp.value=sel.value; }
+  pfx==='inv' ? updateInvPreview() : updateRecPreview();
+}
+function getPickupDrop(pfx) {
+  const sel = g(pfx+'-pickupDropSel');
+  if(sel.value==='__custom__') return g(pfx+'-pickupDrop').value.trim();
+  return sel.value;
+}
+
+// ══════════════════════════════════════════
+// GLOBAL CHIPS
+// ══════════════════════════════════════════
+function toggleGChip(el, key) {
+  const set = gChipSets[key];
+  const val = el.textContent.trim();
+  if(set.has(val)){ set.delete(val); el.classList.remove('active'); }
+  else { set.add(val); el.classList.add('active'); }
+}
+function getChipItems(pfx, type) {
+  const set = gChipSets[pfx+'-'+type] || new Set();
+  const custom = (g(pfx+'-custom'+type.charAt(0).toUpperCase()+type.slice(1))||{value:''}).value.trim();
+  return [...set, ...(custom ? custom.split('\n').filter(l=>l.trim()) : [])];
+}
+
+// ══════════════════════════════════════════
+// ITINERARY PARSER
+// ══════════════════════════════════════════
+function parseItinerary(pfx) {
+  const raw = g(pfx+'-itin-raw').value.trim();
+  if(!raw){ showToast('Please paste your itinerary text first'); return; }
+
+  // Split on day markers: "Day 1", "DAY 1", "D1:", "Day-1", "Day1", "1.", numbered patterns
+  const dayPattern = /(?:^|\n)(?=(?:day[\s\-_]?\d+|d\d+[\s\-:.]|\*\*day\s*\d+)/i);
+  let parts = raw.split(dayPattern).map(s=>s.trim()).filter(Boolean);
+
+  // If no day markers found, try splitting by double newline
+  if(parts.length<=1) {
+    parts = raw.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  // Clear existing days
+  g(pfx+'-dayList').innerHTML = '';
+  dayCounts[pfx] = 0;
+
+  parts.forEach((part) => {
+    // Extract title — first line or text before colon/newline
+    const lines = part.split('\n').map(l=>l.trim()).filter(Boolean);
+    let title = '';
+    let body = '';
+
+    const firstLine = lines[0] || '';
+    // Try to extract "Day N: Title" pattern
+    const titleMatch = firstLine.match(/^(?:day[\s\-_]?(\d+)|d(\d+))[\s\-:.]*(.*)$/i);
+    if(titleMatch) {
+      title = titleMatch[3].trim() || '';
+      body = lines.slice(1).join('\n').trim();
+    } else {
+      // First line is title if short, otherwise all is body
+      if(firstLine.length < 80 && lines.length > 1) {
+        title = firstLine;
+        body = lines.slice(1).join('\n').trim();
+      } else {
+        title = '';
+        body = lines.join('\n').trim();
+      }
+    }
+
+    // Clean title of markdown bold, numbering artifacts
+    title = title.replace(/^\*\*|\*\*$/g,'').replace(/^[#*]+\s*/,'').replace(/^day\s*\d+[\s\-:.]*/i,'').trim();
+
+    addDay(pfx, title, body);
+  });
+
+  showToast(`Parsed ${parts.length} day${parts.length!==1?'s':''} successfully!`);
+}
+
+// ══════════════════════════════════════════
+// DAY BUILDER
+// ══════════════════════════════════════════
+function addDay(pfx, label='', desc='') {
+  dayCounts[pfx]++;
+  const id = pfx+'-day-'+dayCounts[pfx];
+  dayIE[id] = { incl: new Set(), excl: new Set() };
+
+  const mkChips = (opts, type) => opts.map(o =>
+    `<span class="dchip" data-id="${id}" data-t="${type}" onclick="toggleDChip(this)">${o}</span>`
+  ).join('');
+
+  const el = document.createElement('div');
+  el.className = 'day-item';
+  el.id = id;
+
+  // Escape for HTML attribute
+  const safeLabel = label.replace(/"/g,'&quot;');
+  const safeDesc  = desc.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  el.innerHTML = `
+    <div class="day-header">
+      <div class="day-header-left">
+        <span class="day-num-badge">DAY ${dayCounts[pfx]}</span>
+        <input class="day-label-input" type="text" placeholder="Day title (e.g. Sandakphu to Thakum)" value="${safeLabel}" oninput="${pfx==='inv'?'updateInvPreview()':'updateRecPreview()'}">
+      </div>
+      <button class="btn-rm-day" onclick="removeDay('${pfx}','${id}')" title="Remove">✕</button>
+    </div>
+    <div class="day-body">
+      <textarea class="day-desc" placeholder="Describe the day..." oninput="${pfx==='inv'?'updateInvPreview()':'updateRecPreview()'}">
+${safeDesc}</textarea>
+      <div class="day-ie">
+        <div class="day-ie-block incl-block">
+          <label>Included this day</label>
+          <div class="day-chips">${mkChips(D_INCL,'incl')}</div>
+          <textarea class="day-custom" id="${id}-ic" placeholder="Other inclusions..." rows="1"></textarea>
+        </div>
+        <div class="day-ie-block excl-block">
+          <label>Not included / Excluded</label>
+          <div class="day-chips">${mkChips(D_EXCL,'excl')}</div>
+          <textarea class="day-custom" id="${id}-ec" placeholder="Other exclusions..." rows="1"></textarea>
+        </div>
+      </div>
+    </div>`;
+
+  g(pfx+'-dayList').appendChild(el);
+  pfx==='inv' ? updateInvPreview() : updateRecPreview();
+}
+
+function toggleDChip(el) {
+  const id = el.dataset.id, type = el.dataset.t, key = el.textContent.trim();
+  const set = dayIE[id][type];
+  if(set.has(key)){ set.delete(key); el.classList.remove(type==='incl'?'di':'de'); }
+  else { set.add(key); el.classList.add(type==='incl'?'di':'de'); }
+}
+
+function removeDay(pfx, id) {
+  g(id)?.remove();
+  delete dayIE[id];
+  document.querySelectorAll(`#${pfx}-dayList .day-item`).forEach((item,i) => {
+    item.querySelector('.day-num-badge').textContent = `DAY ${i+1}`;
+  });
+  pfx==='inv' ? updateInvPreview() : updateRecPreview();
+}
+
+function getDays(pfx) {
+  return Array.from(document.querySelectorAll(`#${pfx}-dayList .day-item`)).map((item,i) => {
+    const id = item.id;
+    const label = item.querySelector('.day-label-input').value.trim();
+    const desc  = item.querySelector('.day-desc').value.trim();
+    const state = dayIE[id] || {incl:new Set(),excl:new Set()};
+    const ic = (g(id+'-ic')?.value||'').split('\n').filter(l=>l.trim());
+    const ec = (g(id+'-ec')?.value||'').split('\n').filter(l=>l.trim());
+    return { n:i+1, label, desc, incl:[...state.incl,...ic], excl:[...state.excl,...ec] };
+  });
+}
+
+// ══════════════════════════════════════════
+// COST CALC
+// ══════════════════════════════════════════
+function updateInvCostCalc() {
+  const total   = parseFloat(g('inv-totalCost')?.value)||0;
+  const advance = parseFloat(g('inv-advancePaid')?.value)||0;
+  const balEl   = g('inv-balanceDue');
+  if(balEl && !balEl.dataset.manual) balEl.value = total>0 ? Math.max(0,total-advance) : '';
+  const adults  = parseInt(g('inv-numAdults')?.value)||0;
+  g('inv-perHeadDisplay').textContent = adults>0&&total>0 ? fmt(Math.round(total/adults)) : '—';
+  updateInvPreview();
+}
+function updateRecCostCalc() {
+  const total   = parseFloat(g('rec-totalCost')?.value)||0;
+  const advance = parseFloat(g('rec-advancePaid')?.value)||0;
+  const balEl   = g('rec-balanceDue');
+  if(balEl && !balEl.dataset.manual) balEl.value = total>0 ? Math.max(0,total-advance) : '';
+  const adults  = parseInt(g('rec-numAdults')?.value)||0;
+  g('rec-perHeadDisplay').textContent = adults>0&&total>0 ? fmt(Math.round(total/adults)) : '—';
+  updateRecPreview();
+}
+
+// ══════════════════════════════════════════
+// LIVE PREVIEW — INVOICE
+// ══════════════════════════════════════════
+function updateInvPreview() {
+  g('inv-pv-client').textContent = g('inv-clientName')?.value||'Client Name';
+  g('inv-pv-ref').textContent    = g('inv-invoiceNo')?.value||'—';
+  g('inv-pv-trip').textContent   = g('inv-tripName')?.value||'—';
+  const s=g('inv-travelStart')?.value, e=g('inv-travelEnd')?.value;
+  g('inv-pv-dates').textContent  = s&&e ? `${fmtDate(s)} — ${fmtDate(e)}` : '—';
+  g('inv-pv-dur').textContent    = g('inv-duration')?.value||'—';
+  g('inv-pv-persons').textContent= `${g('inv-numAdults')?.value||0}A / ${g('inv-numChildren')?.value||0}C`;
+  g('inv-pv-dest').textContent   = g('inv-destinations')?.value||'—';
+  const total  = parseFloat(g('inv-totalCost')?.value)||0;
+  const adv    = parseFloat(g('inv-advancePaid')?.value)||0;
+  const bal    = parseFloat(g('inv-balanceDue')?.value)||Math.max(0,total-adv);
+  g('inv-pv-total').textContent   = fmt(total);
+  g('inv-pv-advance').textContent = fmt(adv);
+  g('inv-pv-due').textContent     = fmt(bal);
+  renderPreviewDays('inv');
+}
+
+// LIVE PREVIEW — RECEIPT
+function updateRecPreview() {
+  g('rec-pv-client').textContent = g('rec-clientName')?.value||'Client Name';
+  g('rec-pv-ref').textContent    = g('rec-receiptNo')?.value||'—';
+  g('rec-pv-trip').textContent   = g('rec-tripName')?.value||'—';
+  const s=g('rec-travelStart')?.value, e=g('rec-travelEnd')?.value;
+  g('rec-pv-dates').textContent  = s&&e ? `${fmtDate(s)} — ${fmtDate(e)}` : '—';
+  g('rec-pv-dur').textContent    = g('rec-duration')?.value||'—';
+  g('rec-pv-persons').textContent= `${g('rec-numAdults')?.value||0}A / ${g('rec-numChildren')?.value||0}C`;
+  const total  = parseFloat(g('rec-totalCost')?.value)||0;
+  const adv    = parseFloat(g('rec-advancePaid')?.value)||0;
+  const bal    = parseFloat(g('rec-balanceDue')?.value)||Math.max(0,total-adv);
+  g('rec-pv-total').textContent   = fmt(total);
+  g('rec-pv-advance').textContent = fmt(adv);
+  g('rec-pv-due').textContent     = fmt(bal);
+  renderPreviewDays('rec');
+}
+
+function renderPreviewDays(pfx) {
+  const days = getDays(pfx);
+  const pvD = g(pfx+'-pv-days');
+  pvD.innerHTML='';
+  if(!days.length) return;
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:.64rem;font-weight:700;color:var(--g3);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 5px';
+  hdr.textContent='Itinerary';
+  pvD.appendChild(hdr);
+  days.forEach(d=>{
+    const row=document.createElement('div');
+    row.className='pv-day';
+    const short=d.desc.length>50?d.desc.slice(0,50)+'…':d.desc;
+    row.innerHTML=`<span class="dl">D${d.n}</span><span>${d.label?(d.label+(d.desc?' — '+short:'')):(short||'—')}</span>`;
+    pvD.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════
+// PDF ENGINE — SHARED HELPERS
+// ══════════════════════════════════════════
+function buildPDFHeader(doc, W, M, GDK, G, GLT, GOLDL, WHITE, docTitle, docNo, dateStr) {
+  // Full header band
+  doc.setFillColor(...GDK); doc.rect(0,0,W,48,'F');
+
+  // Decorative diagonal accent lines
+  doc.setDrawColor(...G); doc.setLineWidth(.4);
+  for(let i=0;i<6;i++){
+    const x=W-80+i*12;
+    doc.line(x,0,x-30,48);
+  }
+
+  // Brand
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...WHITE);
+  doc.text('SANA ON THE GO', M, 16);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(160,210,190);
+  doc.text('INTO THE WILD TOUR AND TRAVELS', M, 23);
+  doc.text('+91 98747 40763  |  sayantikaintothewild@gmail.com  |  @sana.onthe.go', M, 29.5);
+  doc.text('Siliguri, North Bengal, India', M, 35);
+
+  // Document type (right side)
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...GOLDL);
+  doc.text(docTitle, W-M, 15, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(185,220,205);
+  doc.text(`Ref: ${docNo}`, W-M, 23, {align:'right'});
+  doc.text(`Date: ${dateStr}`, W-M, 30, {align:'right'});
+
+  // Bottom green stripe
+  doc.setFillColor(...G); doc.rect(0,44,W,4,'F');
+  doc.setFillColor(201,168,76); doc.rect(0,44,W,1.5,'F'); // gold top stripe on green
+}
+
+function buildItinerarySection(doc, days, W, M, G, GDK, GLT, RED, TEXT, MUTED, WHITE, CREAM, y, checkY, pageHdrFn) {
+  if(!days.length) return y;
+
+  // Section header
+  y = drawSectionHead(doc, 'ITINERARY', W, M, G, WHITE, y, checkY, pageHdrFn);
+
+  const ITX = M + 26;
+  const ITW = W - M*2 - 28;
+  const BODY_LH = 5.1;
+  const IE_LH = 4.5;
+
+  days.forEach((day, i) => {
+    const rawLabel = ep(day.label);
+    const rawDesc  = ep(day.desc);
+    const cleanIncl = day.incl.map(ep).filter(Boolean);
+    const cleanExcl = day.excl.map(ep).filter(Boolean);
+
+    const isGeneric = /^day\s*\d+$/i.test(rawLabel.trim());
+    const showLabel = rawLabel && !isGeneric;
+
+    const descParas = rawDesc ? rawDesc.split(/\n+/).filter(s=>s.trim()) : [];
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.8);
+    const descGroups = descParas.map(p => doc.splitTextToSize(p.trim(), ITW));
+    const totalDescLines = descGroups.reduce((a,g)=>a+g.length,0);
+    const paraGap = descGroups.length > 1 ? (descGroups.length-1)*1.5 : 0;
+
+    const inclStr = cleanIncl.length ? 'Included: '+cleanIncl.join(', ') : '';
+    const exclStr = cleanExcl.length ? 'Excluded: '+cleanExcl.join(', ') : '';
+    doc.setFontSize(7.5);
+    const iLines = inclStr ? doc.splitTextToSize(inclStr, ITW) : [];
+    const eLines = exclStr ? doc.splitTextToSize(exclStr, ITW) : [];
+
+    const bH = 6
+      + (showLabel ? BODY_LH+1.5 : 0)
+      + totalDescLines*BODY_LH + paraGap
+      + (iLines.length ? iLines.length*IE_LH+4 : 0)
+      + (eLines.length ? eLines.length*IE_LH+3 : 0)
+      + 6;
+
+    if(y+bH+2>272){ doc.addPage(); pageHdrFn(); y=36; }
+
+    // Alternating row bg
+    if(i%2===0){
+      doc.setFillColor(248,247,244);
+      doc.roundedRect(M, y-1, W-M*2, bH+2, 1.5,1.5,'F');
+    }
+
+    // Day badge
+    const bx=M+2, by=y+2;
+    doc.setFillColor(...G); doc.roundedRect(bx,by,18,18,2,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5); doc.setTextColor(...WHITE);
+    doc.text('DAY',bx+9,by+5.5,{align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...WHITE);
+    doc.text(String(day.n),bx+9,by+14,{align:'center'});
+
+    let ty = y+5;
+
+    if(showLabel){
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GDK);
+      const lblLines = doc.splitTextToSize(rawLabel, ITW);
+      doc.text(lblLines, ITX, ty);
+      ty += lblLines.length*BODY_LH+1.5;
+    }
+
+    if(descGroups.length){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.8); doc.setTextColor(...TEXT);
+      descGroups.forEach((lines,pi)=>{
+        doc.text(lines, ITX, ty);
+        ty += lines.length*BODY_LH;
+        if(pi<descGroups.length-1) ty+=1.5;
+      });
+      ty+=3;
+    }
+
+    if(iLines.length){
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...G);
+      doc.text(iLines[0], ITX, ty);
+      if(iLines.length>1){ doc.setFont('helvetica','normal'); for(let li=1;li<iLines.length;li++){ty+=IE_LH; doc.text(iLines[li],ITX,ty);} }
+      ty+=IE_LH+1;
+    }
+
+    if(eLines.length){
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...RED);
+      doc.text(eLines[0], ITX, ty);
+      if(eLines.length>1){ doc.setFont('helvetica','normal'); doc.setTextColor(...RED); for(let li=1;li<eLines.length;li++){ty+=IE_LH; doc.text(eLines[li],ITX,ty);} }
+    }
+
+    y += bH+2;
+    if(i<days.length-1){
+      doc.setDrawColor(218,213,205); doc.setLineWidth(.2);
+      doc.line(M+22, y, W-M, y);
+    }
+  });
+  return y+8;
+}
+
+function buildIESection(doc, gIncl, gExcl, W, M, G, RED, TEXT, WHITE, y, checkY, pageHdrFn) {
+  if(!gIncl.length && !gExcl.length) return y;
+  y = drawSectionHead(doc, 'INCLUSIONS & EXCLUSIONS', W, M, G, WHITE, y, checkY, pageHdrFn);
+
+  const strip = s => ep(s);
+  const colW = (W-M*2-8)/2;
+  const leftX = M, rightX = M+colW+8;
+  const itemW = colW-6;
+
+  const inclItems = gIncl.map(item=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    const ls = doc.splitTextToSize('- '+strip(item), itemW);
+    return {ls, rh:ls.length*4.8+2};
+  });
+  const exclItems = gExcl.map(item=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    const ls = doc.splitTextToSize('- '+strip(item), itemW);
+    return {ls, rh:ls.length*4.8+2};
+  });
+
+  const inclH = gIncl.length ? inclItems.reduce((a,i)=>a+i.rh,0)+8 : 0;
+  const exclH = gExcl.length ? exclItems.reduce((a,i)=>a+i.rh,0)+8 : 0;
+  const blockH = Math.max(inclH,exclH,12);
+  if(y+blockH+4>272){ doc.addPage(); pageHdrFn(); y=36; }
+
+  if(gIncl.length){
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(30,100,60);
+    doc.text('WHAT IS INCLUDED', leftX, y);
+    let ly=y+6;
+    inclItems.forEach(({ls,rh})=>{
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,40,30);
+      doc.text(ls, leftX+3, ly); ly+=rh;
+    });
+  }
+  if(gExcl.length){
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(160,40,40);
+    doc.text('WHAT IS NOT INCLUDED', rightX, y);
+    let ry=y+6;
+    exclItems.forEach(({ls,rh})=>{
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(50,30,30);
+      doc.text(ls, rightX+3, ry); ry+=rh;
+    });
+  }
+  return y+blockH+8;
+}
+
+function drawSectionHead(doc, title, W, M, G, WHITE, y, checkY, pageHdrFn) {
+  if(y+14>272){ doc.addPage(); pageHdrFn(); y=36; }
+  doc.setFillColor(...G); doc.roundedRect(M,y,W-M*2,8.5,1.5,1.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...WHITE);
+  doc.text(title, M+5, y+5.8);
+  return y+13;
+}
+
+function buildPDFFooter(doc, W, M, GDK, WHITE, GLT) {
+  const tp = doc.internal.getNumberOfPages();
+  for(let pg=1;pg<=tp;pg++){
+    doc.setPage(pg);
+    doc.setFillColor(...GDK); doc.rect(0,283,W,14,'F');
+    doc.setFillColor(45,106,79); doc.rect(0,283,W,1.5,'F');
+    doc.setFont('helvetica','bold');  doc.setFontSize(7);   doc.setTextColor(...WHITE);
+    doc.text('Sana On The Go  |  Into The Wild Tour and Travels', M, 289.5);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5); doc.setTextColor(155,205,180);
+    doc.text('WA: +91 98747 40763  ·  sayantikaintothewild@gmail.com  ·  @sana.onthe.go', M, 293.8);
+    doc.setTextColor(...WHITE); doc.text(`Page ${pg} of ${tp}`, W-M, 289.5, {align:'right'});
+    doc.setTextColor(155,205,180); doc.text('Siliguri, North Bengal, India', W-M, 293.8, {align:'right'});
+  }
+}
+
+// ══════════════════════════════════════════
+// GENERATE INVOICE PDF
+// ══════════════════════════════════════════
+function generateInvoicePDF() {
+  const pfx = 'inv';
+  const d = {
+    clientName:  g(pfx+'-clientName')?.value.trim()  || 'Valued Client',
+    clientPhone: g(pfx+'-clientPhone')?.value.trim() || '',
+    clientEmail: g(pfx+'-clientEmail')?.value.trim() || '',
+    clientCity:  g(pfx+'-clientCity')?.value.trim()  || '',
+    invoiceNo:   g(pfx+'-invoiceNo')?.value.trim()   || 'SOTG-INV-001',
+    invoiceDate: g(pfx+'-invoiceDate')?.value || '',
+    tripName:    g(pfx+'-tripName')?.value.trim()    || 'Himalayan Journey',
+    travelStart: g(pfx+'-travelStart')?.value || '',
+    travelEnd:   g(pfx+'-travelEnd')?.value   || '',
+    duration:    g(pfx+'-duration')?.value    || '',
+    numAdults:   g(pfx+'-numAdults')?.value   || '0',
+    numChildren: g(pfx+'-numChildren')?.value || '0',
+    numRooms:    g(pfx+'-numRooms')?.value    || '1',
+    accomType:   g(pfx+'-accomType')?.value   || '',
+    transport:   g(pfx+'-transport')?.value   || '',
+    destinations:g(pfx+'-destinations')?.value.trim() || '',
+    pickupDrop:  getPickupDrop(pfx),
+    totalCost:   parseFloat(g(pfx+'-totalCost')?.value)   || 0,
+    advancePaid: parseFloat(g(pfx+'-advancePaid')?.value) || 0,
+    balanceDue:  parseFloat(g(pfx+'-balanceDue')?.value)  || 0,
+    advanceDate: g(pfx+'-advanceDate')?.value     || '',
+    balancePaid: g(pfx+'-balancePaidDate')?.value || '',
+    payMethod:   g(pfx+'-payMethod')?.value       || 'UPI / GPay',
+    cancelPolicy:g(pfx+'-cancelPolicy')?.value.trim()  || '',
+    specialNotes:g(pfx+'-specialNotes')?.value.trim()  || '',
+    personalMsg: g(pfx+'-personalMsg')?.value.trim()   || '',
+  };
+
+  const days   = getDays(pfx);
+  const gIncl  = getChipItems(pfx,'incl');
+  const gExcl  = getChipItems(pfx,'excl');
+  const perHead = parseInt(d.numAdults)>0&&d.totalCost>0 ? Math.round(d.totalCost/parseInt(d.numAdults)) : 0;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const W=210, M=15;
+
+  const GDK=[26,61,43]; const G=[45,106,79]; const GLT=[82,183,136];
+  const GOLD=[160,120,48]; const GOLDL=[232,201,122]; const CREAM=[247,244,239];
+  const WHITE=[255,255,255]; const MUTED=[105,105,105]; const TEXT=[28,28,28];
+  const RED=[180,50,50]; const REDDL=[255,242,242];
+
+  let y = 0;
+
+  function pageHdr() {
+    // Mini header for subsequent pages
+    doc.setFillColor(...GDK); doc.rect(0,0,W,11,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+    doc.text(`Sana On The Go  |  ${d.invoiceNo}  |  ${d.clientName}`, M, 7.2);
+    doc.setTextColor(...GLT); doc.text('INVOICE', W-M, 7.2, {align:'right'});
+  }
+
+  function checkY(n) {
+    if(y+n>273){ doc.addPage(); pageHdr(); y=18; }
+  }
+
+  // ── PAGE 1 HERO HEADER
+  buildPDFHeader(doc, W, M, GDK, G, GLT, GOLDL, WHITE, 'INVOICE', d.invoiceNo, fmtDate(d.invoiceDate));
+  y = 54;
+
+  // ── CLIENT + TRIP INFO BLOCK
+  const tripRows = [
+    ['Package', d.tripName],
+    ['Travel Dates', d.travelStart&&d.travelEnd ? `${fmtDate(d.travelStart)} to ${fmtDate(d.travelEnd)}` : '—'],
+    ['Duration', d.duration || '—'],
+    ['Guests', `${d.numAdults} Adults, ${d.numChildren} Children`],
+    ['Rooms', `${d.numRooms} x ${d.accomType}`],
+    ['Transport', d.transport || '—'],
+    ['Places', d.destinations || '—'],
+    ['Pickup / Drop', d.pickupDrop || '—'],
+  ];
+
+  const LBLW=32, VW=W/2-M-LBLW-6;
+  let tH=14;
+  const tCache=tripRows.map(([lbl,val])=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    const lines=doc.splitTextToSize(val,VW);
+    const h=Math.max(lines.length*4.8,6)+2.5;
+    tH+=h; return {lbl,lines,h};
+  });
+  tH=Math.max(tH+6,52);
+  const RX=W/2+3;
+
+  // Left: Billed To
+  doc.setFillColor(...CREAM); doc.roundedRect(M,y,RX-M-4,tH,2.5,2.5,'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(M,y,RX-M-4,9,2.5,2.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text('BILLED TO', M+5, y+6);
+  const cnLines=doc.splitTextToSize(d.clientName, RX-M-4-10);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...GDK);
+  doc.text(cnLines, M+5, y+17);
+  let cy=y+17+cnLines.length*6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(...MUTED);
+  if(d.clientPhone){ doc.text(d.clientPhone, M+5, cy); cy+=5.5; }
+  if(d.clientEmail){ doc.text(d.clientEmail, M+5, cy); cy+=5.5; }
+  if(d.clientCity) { doc.text(d.clientCity,  M+5, cy); }
+
+  // Right: Trip Details
+  doc.setFillColor(...CREAM); doc.roundedRect(RX,y,W-RX-M,tH,2.5,2.5,'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(RX,y,W-RX-M,9,2.5,2.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text('TRIP DETAILS', RX+5, y+6);
+  let ry=y+15;
+  tCache.forEach(({lbl,lines,h})=>{
+    doc.setFont('helvetica','bold');  doc.setFontSize(6.5); doc.setTextColor(...MUTED); doc.text(lbl, RX+4, ry);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.8); doc.setTextColor(...TEXT);  doc.text(lines, RX+5+LBLW, ry);
+    ry+=h;
+  });
+
+  y+=tH+14;
+
+  // ── ITINERARY
+  y = buildItinerarySection(doc, days, W, M, G, GDK, GLT, RED, TEXT, MUTED, WHITE, CREAM, y, checkY, pageHdr);
+
+  // ── INCLUSIONS & EXCLUSIONS
+  y = buildIESection(doc, gIncl, gExcl, W, M, G, RED, TEXT, WHITE, y, checkY, pageHdr);
+
+  // ── COST SUMMARY
+  checkY(16);
+  y = drawSectionHead(doc, 'INVOICE SUMMARY', W, M, G, WHITE, y, checkY, pageHdr);
+
+  // Line items table style
+  const tableX=M, tableW=W-M*2;
+  const colDesc=tableW*0.52, colAmt=tableW*0.24;
+
+  // Table header
+  doc.setFillColor(240,237,230); doc.roundedRect(tableX,y,tableW,7.5,1,1,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...MUTED);
+  doc.text('DESCRIPTION', tableX+4, y+5);
+  doc.text('DETAILS', tableX+colDesc, y+5);
+  doc.text('AMOUNT', tableX+tableW-4, y+5, {align:'right'});
+  y+=10;
+
+  // Line items
+  const rows=[
+    ['Package Cost', `${d.numAdults} Adults x Package`, fmtRs(d.totalCost)],
+  ];
+  if(perHead>0) rows.push(['Per Head Cost','Cost per adult',fmtRs(perHead)]);
+  rows.push(['Accommodation',`${d.numRooms} room(s) — ${d.accomType}`,'Included']);
+  rows.push(['Transportation',d.transport,'Included']);
+
+  rows.forEach((row,i)=>{
+    const rowH=9;
+    checkY(rowH);
+    if(i%2===0){ doc.setFillColor(250,249,246); doc.rect(tableX,y,tableW,rowH,'F'); }
+    doc.setFont('helvetica','bold');   doc.setFontSize(7.8); doc.setTextColor(...TEXT); doc.text(row[0], tableX+4, y+6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);   doc.setTextColor(...MUTED); doc.text(row[1]||'', tableX+colDesc, y+6);
+    doc.setFont('helvetica','bold');   doc.setFontSize(7.8); doc.setTextColor(...TEXT); doc.text(row[2], tableX+tableW-4, y+6, {align:'right'});
+    y+=rowH;
+  });
+
+  // Totals
+  checkY(50);
+  y+=4;
+  doc.setDrawColor(220,215,205); doc.setLineWidth(.3); doc.line(tableX,y,tableX+tableW,y); y+=6;
+
+  // Gross total banner
+  doc.setFillColor(...GOLD); doc.roundedRect(tableX,y,tableW,16,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...WHITE);
+  doc.text('TOTAL PACKAGE COST', tableX+5, y+7);
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...WHITE);
+  doc.text(fmtRs(d.totalCost), tableX+tableW-5, y+11, {align:'right'});
+  y+=22;
+
+  // Advance + Balance boxes
+  const bw=(tableW-6)/2;
+  checkY(24);
+
+  doc.setFillColor(232,247,238); doc.roundedRect(tableX,y,bw,22,2,2,'F');
+  doc.setFillColor(...G);        doc.roundedRect(tableX,y,bw,8,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text('ADVANCE RECEIVED', tableX+bw/2, y+5.5, {align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...G);
+  doc.text(fmtRs(d.advancePaid), tableX+bw/2, y+16, {align:'center'});
+  if(d.advanceDate){
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.2); doc.setTextColor(...MUTED);
+    doc.text(`${fmtDate(d.advanceDate)} via ${d.payMethod}`, tableX+bw/2, y+20.5, {align:'center'});
+  }
+
+  doc.setFillColor(255,236,236); doc.roundedRect(tableX+bw+6,y,bw,22,2,2,'F');
+  doc.setFillColor(...RED);      doc.roundedRect(tableX+bw+6,y,bw,8,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text(d.balanceDue<=0?'BALANCE CLEARED':'BALANCE DUE', tableX+bw+6+bw/2, y+5.5, {align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...RED);
+  doc.text(d.balanceDue<=0?'PAID IN FULL':fmtRs(d.balanceDue), tableX+bw+6+bw/2, y+16, {align:'center'});
+  if(d.balancePaid&&d.balanceDue<=0){
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.2); doc.setTextColor(...MUTED);
+    doc.text(`Cleared on ${fmtDate(d.balancePaid)}`, tableX+bw+6+bw/2, y+20.5, {align:'center'});
+  }
+  y+=28;
+
+  // Payment info box
+  checkY(14);
+  doc.setFillColor(...CREAM); doc.roundedRect(M,y,W-M*2,12,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...GDK);
+  doc.text('PAYMENT INFORMATION', M+5, y+5.2);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...MUTED);
+  doc.text('For payment details / UPI ID / bank account, please contact us on WhatsApp: +91 98747 40763', M+5, y+9.5);
+  y+=17;
+
+  // Cancellation Policy
+  if(d.cancelPolicy){
+    const cL=doc.splitTextToSize(ep(d.cancelPolicy),W-M*2-10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    const cH=cL.length*5.2+12;
+    checkY(cH+14);
+    y=drawSectionHead(doc,'CANCELLATION POLICY',W,M,G,WHITE,y,checkY,pageHdr);
+    doc.setFillColor(255,243,240); doc.roundedRect(M,y,W-M*2,cH,2,2,'F');
+    doc.setFillColor(RED[0],RED[1],RED[2]); doc.roundedRect(M,y,3,cH,1,1,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(40,20,20);
+    cL.forEach((l,i)=>doc.text(l,M+7,y+7+i*5.2));
+    y+=cH+8;
+  }
+
+  // Special Notes
+  if(d.specialNotes){
+    const nL=doc.splitTextToSize(ep(d.specialNotes),W-M*2-10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    const nH=nL.length*5+12;
+    checkY(nH+14);
+    y=drawSectionHead(doc,'TERMS & CONDITIONS',W,M,G,WHITE,y,checkY,pageHdr);
+    doc.setFillColor(...CREAM); doc.roundedRect(M,y,W-M*2,nH,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    nL.forEach((l,i)=>doc.text(l,M+5,y+7+i*5));
+    y+=nH+8;
+  }
+
+  // Personal Message
+  if(d.personalMsg){
+    const mL=doc.splitTextToSize(`"${ep(d.personalMsg)}"`,W-M*2-14);
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.8);
+    const mH=mL.length*5.5+16;
+    checkY(mH+6);
+    doc.setFillColor(235,248,241); doc.roundedRect(M,y,W-M*2,mH,3,3,'F');
+    doc.setFillColor(...G); doc.roundedRect(M,y,3.5,mH,1.5,1.5,'F');
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.8); doc.setTextColor(...GDK);
+    mL.forEach((l,i)=>doc.text(l,M+9,y+9+i*5.5));
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...G);
+    doc.text('- Sayantika, Sana On The Go', W-M, y+mH-4, {align:'right'});
+    y+=mH+8;
+  }
+
+  // Footer
+  buildPDFFooter(doc, W, M, GDK, WHITE, GLT);
+
+  const fn=`SOTG-Invoice-${d.invoiceNo}-${d.clientName.replace(/\s+/g,'-')}.pdf`;
+  doc.save(fn);
+  showToast(`Invoice saved: ${fn}`);
+}
+
+// ══════════════════════════════════════════
+// GENERATE ADVANCE RECEIPT PDF
+// ══════════════════════════════════════════
+function generateReceiptPDF() {
+  const pfx = 'rec';
+  const d = {
+    clientName:  g(pfx+'-clientName')?.value.trim()  || 'Valued Client',
+    clientPhone: g(pfx+'-clientPhone')?.value.trim() || '',
+    clientEmail: g(pfx+'-clientEmail')?.value.trim() || '',
+    clientCity:  g(pfx+'-clientCity')?.value.trim()  || '',
+    receiptNo:   g(pfx+'-receiptNo')?.value.trim()   || 'SOTG-REC-001',
+    receiptDate: g(pfx+'-receiptDate')?.value || '',
+    tripName:    g(pfx+'-tripName')?.value.trim()    || 'Himalayan Package',
+    travelStart: g(pfx+'-travelStart')?.value || '',
+    travelEnd:   g(pfx+'-travelEnd')?.value   || '',
+    duration:    g(pfx+'-duration')?.value    || '',
+    numAdults:   g(pfx+'-numAdults')?.value   || '0',
+    numChildren: g(pfx+'-numChildren')?.value || '0',
+    numRooms:    g(pfx+'-numRooms')?.value    || '1',
+    destinations:g(pfx+'-destinations')?.value.trim() || '',
+    pickupDrop:  getPickupDrop(pfx),
+    totalCost:   parseFloat(g(pfx+'-totalCost')?.value)   || 0,
+    advancePaid: parseFloat(g(pfx+'-advancePaid')?.value) || 0,
+    balanceDue:  parseFloat(g(pfx+'-balanceDue')?.value)  || 0,
+    advanceDate: g(pfx+'-advanceDate')?.value || '',
+    dueDate:     g(pfx+'-dueDate')?.value     || '',
+    payMethod:   g(pfx+'-payMethod')?.value   || 'UPI / GPay',
+    cancelPolicy:g(pfx+'-cancelPolicy')?.value.trim() || '',
+    specialNotes:g(pfx+'-specialNotes')?.value.trim() || '',
+    personalMsg: g(pfx+'-personalMsg')?.value.trim()  || '',
+  };
+
+  const days   = getDays(pfx);
+  const gIncl  = getChipItems(pfx,'incl');
+  const gExcl  = getChipItems(pfx,'excl');
+  const perHead = parseInt(d.numAdults)>0&&d.totalCost>0 ? Math.round(d.totalCost/parseInt(d.numAdults)) : 0;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const W=210, M=15;
+
+  const GDK=[26,61,43]; const G=[45,106,79]; const GLT=[82,183,136];
+  const GOLD=[160,120,48]; const GOLDL=[232,201,122]; const CREAM=[247,244,239];
+  const WHITE=[255,255,255]; const MUTED=[105,105,105]; const TEXT=[28,28,28];
+  const RED=[180,50,50];
+
+  let y = 0;
+
+  function pageHdr(){
+    doc.setFillColor(...GDK); doc.rect(0,0,W,11,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+    doc.text(`Sana On The Go  |  ${d.receiptNo}  |  ${d.clientName}`, M, 7.2);
+    doc.setTextColor(...GLT); doc.text('ADVANCE RECEIPT', W-M, 7.2, {align:'right'});
+  }
+  function checkY(n){ if(y+n>273){doc.addPage();pageHdr();y=18;} }
+
+  // Hero header
+  buildPDFHeader(doc, W, M, GDK, G, GLT, GOLDL, WHITE, 'ADVANCE RECEIPT', d.receiptNo, fmtDate(d.receiptDate));
+  y=54;
+
+  // CONFIRMATION BANNER
+  doc.setFillColor(...G); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...WHITE);
+  doc.text('BOOKING CONFIRMED — ADVANCE PAYMENT RECEIVED', W/2, y+6.5, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(200,240,220);
+  doc.text('This document confirms receipt of your advance payment and secures your booking.', W/2, y+11, {align:'center'});
+  y+=20;
+
+  // Client + Trip block
+  const tripRows=[
+    ['Package', d.tripName],
+    ['Travel Dates', d.travelStart&&d.travelEnd ? `${fmtDate(d.travelStart)} to ${fmtDate(d.travelEnd)}` : '—'],
+    ['Duration', d.duration || '—'],
+    ['Guests', `${d.numAdults} Adults, ${d.numChildren} Children`],
+    ['Places', d.destinations || '—'],
+    ['Pickup / Drop', d.pickupDrop || '—'],
+  ];
+
+  const LBLW=32, VW=W/2-M-LBLW-6;
+  let tH=14;
+  const tCache=tripRows.map(([lbl,val])=>{
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    const lines=doc.splitTextToSize(val,VW);
+    const h=Math.max(lines.length*4.8,6)+2.5;
+    tH+=h; return {lbl,lines,h};
+  });
+  tH=Math.max(tH+6,48);
+  const RX=W/2+3;
+
+  doc.setFillColor(...CREAM); doc.roundedRect(M,y,RX-M-4,tH,2.5,2.5,'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(M,y,RX-M-4,9,2.5,2.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text('RECEIPT ISSUED TO', M+5, y+6);
+  const cnLines=doc.splitTextToSize(d.clientName,RX-M-4-10);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...GDK);
+  doc.text(cnLines, M+5, y+17);
+  let cy=y+17+cnLines.length*6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(...MUTED);
+  if(d.clientPhone){doc.text(d.clientPhone,M+5,cy);cy+=5.5;}
+  if(d.clientEmail){doc.text(d.clientEmail,M+5,cy);cy+=5.5;}
+  if(d.clientCity) {doc.text(d.clientCity, M+5,cy);}
+
+  doc.setFillColor(...CREAM); doc.roundedRect(RX,y,W-RX-M,tH,2.5,2.5,'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(RX,y,W-RX-M,9,2.5,2.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text('BOOKING DETAILS', RX+5, y+6);
+  let ry=y+15;
+  tCache.forEach(({lbl,lines,h})=>{
+    doc.setFont('helvetica','bold');  doc.setFontSize(6.5); doc.setTextColor(...MUTED); doc.text(lbl,RX+4,ry);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.8); doc.setTextColor(...TEXT);  doc.text(lines,RX+5+LBLW,ry);
+    ry+=h;
+  });
+  y+=tH+14;
+
+  // PAYMENT SUMMARY BOX
+  checkY(50);
+  y=drawSectionHead(doc,'PAYMENT SUMMARY',W,M,G,WHITE,y,checkY,pageHdr);
+
+  // 3-box payment summary
+  const bw3=(W-M*2-12)/3;
+  const boxes=[
+    {label:'TOTAL PACKAGE COST', val:fmtRs(d.totalCost), bg:[247,244,239], hbg:GDK, col:GDK},
+    {label:'ADVANCE RECEIVED', val:fmtRs(d.advancePaid), bg:[230,246,237], hbg:G, col:G},
+    {label:'BALANCE PENDING', val:d.balanceDue<=0?'NIL':fmtRs(d.balanceDue), bg:[255,238,238], hbg:RED, col:RED},
+  ];
+  boxes.forEach((b,i)=>{
+    const bx=M+i*(bw3+6);
+    doc.setFillColor(...b.bg);  doc.roundedRect(bx,y,bw3,24,2,2,'F');
+    doc.setFillColor(...b.hbg); doc.roundedRect(bx,y,bw3,8.5,2,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...WHITE);
+    doc.text(b.label, bx+bw3/2, y+5.8, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...b.col);
+    doc.text(b.val, bx+bw3/2, y+19, {align:'center'});
+  });
+  y+=30;
+
+  // Payment details row
+  checkY(16);
+  doc.setFillColor(...CREAM); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+  doc.setFillColor(...G); doc.roundedRect(M,y,3.5,14,1.5,1.5,'F');
+  let px=M+8;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...GDK);
+  doc.text('Advance received on:', px, y+5.5);
+  doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+  doc.text(d.advanceDate?fmtDate(d.advanceDate):'—', px+42, y+5.5);
+  doc.setFont('helvetica','bold'); doc.setTextColor(...GDK);
+  doc.text('via:', px+70, y+5.5);
+  doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+  doc.text(d.payMethod, px+76, y+5.5);
+  if(d.dueDate){
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...RED);
+    doc.text('Balance due by:', px, y+11);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+    doc.text(fmtDate(d.dueDate), px+38, y+11);
+  }
+  if(perHead>0){
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...GDK);
+    doc.text(`Per head cost: ${fmtRs(perHead)} per adult`, W-M-5, y+8.5, {align:'right'});
+  }
+  y+=20;
+
+  // ITINERARY
+  y=buildItinerarySection(doc,days,W,M,G,GDK,GLT,RED,TEXT,MUTED,WHITE,CREAM,y,checkY,pageHdr);
+
+  // INCLUSIONS & EXCLUSIONS
+  y=buildIESection(doc,gIncl,gExcl,W,M,G,RED,TEXT,WHITE,y,checkY,pageHdr);
+
+  // Cancellation
+  if(d.cancelPolicy){
+    const cL=doc.splitTextToSize(ep(d.cancelPolicy),W-M*2-10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    const cH=cL.length*5.2+12;
+    checkY(cH+14);
+    y=drawSectionHead(doc,'CANCELLATION POLICY',W,M,G,WHITE,y,checkY,pageHdr);
+    doc.setFillColor(255,243,240); doc.roundedRect(M,y,W-M*2,cH,2,2,'F');
+    doc.setFillColor(...RED); doc.roundedRect(M,y,3.5,cH,1.5,1.5,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(40,20,20);
+    cL.forEach((l,i)=>doc.text(l,M+7,y+7+i*5.2));
+    y+=cH+8;
+  }
+
+  // Notes
+  if(d.specialNotes){
+    const nL=doc.splitTextToSize(ep(d.specialNotes),W-M*2-10);
+    const nH=nL.length*5+12;
+    checkY(nH+14);
+    y=drawSectionHead(doc,'IMPORTANT NOTES',W,M,G,WHITE,y,checkY,pageHdr);
+    doc.setFillColor(...CREAM); doc.roundedRect(M,y,W-M*2,nH,2,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    nL.forEach((l,i)=>doc.text(l,M+5,y+7+i*5));
+    y+=nH+8;
+  }
+
+  // Personal message
+  if(d.personalMsg){
+    const mL=doc.splitTextToSize(`"${ep(d.personalMsg)}"`,W-M*2-14);
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.8);
+    const mH=mL.length*5.5+16;
+    checkY(mH+6);
+    doc.setFillColor(235,248,241); doc.roundedRect(M,y,W-M*2,mH,3,3,'F');
+    doc.setFillColor(...G); doc.roundedRect(M,y,3.5,mH,1.5,1.5,'F');
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.8); doc.setTextColor(...GDK);
+    mL.forEach((l,i)=>doc.text(l,M+9,y+9+i*5.5));
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...G);
+    doc.text('- Sayantika, Sana On The Go', W-M, y+mH-4, {align:'right'});
+    y+=mH+8;
+  }
+
+  buildPDFFooter(doc,W,M,GDK,WHITE,GLT);
+
+  const fn=`SOTG-AdvanceReceipt-${d.receiptNo}-${d.clientName.replace(/\s+/g,'-')}.pdf`;
+  doc.save(fn);
+  showToast(`Receipt saved: ${fn}`);
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
