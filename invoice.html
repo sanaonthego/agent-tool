@@ -911,24 +911,24 @@ window.addEventListener('DOMContentLoaded', () => {
   const mo = String(new Date().getMonth()+1).padStart(2,'0');
   const rnd = () => String(Math.floor(Math.random()*900)+100);
 
-  G('inv-invoiceDate').value = today;
-  G('rec-receiptDate').value = today;
-  G('inv-invoiceNo').value   = `SOTG-INV-${yr}${mo}-${rnd()}`;
-  G('rec-receiptNo').value   = `SOTG-REC-${yr}${mo}-${rnd()}`;
+  gel('inv-invoiceDate').value = today;
+  gel('rec-receiptDate').value = today;
+  gel('inv-invoiceNo').value   = `SOTG-INV-${yr}${mo}-${rnd()}`;
+  gel('rec-receiptNo').value   = `SOTG-REC-${yr}${mo}-${rnd()}`;
 
   ['inv-incl','inv-excl','rec-incl','rec-excl'].forEach(k => chipSets[k] = new Set());
 
   // balance manual override tracking
   ['inv','rec'].forEach(p => {
-    G(p+'-balanceDue').addEventListener('input', function(){ this.dataset.manual='1'; updatePrev(p); });
-    G(p+'-totalCost').addEventListener('input',   () => { G(p+'-balanceDue').dataset.manual=''; });
+    gel(p+'-balanceDue').addEventListener('input', function(){ this.dataset.manual='1'; updatePrev(p); });
+    gel(p+'-totalCost').addEventListener('input',   () => { gel(p+'-balanceDue').dataset.manual=''; });
   });
 
   updatePrev('inv'); updatePrev('rec');
 });
 
 // ── HELPERS
-function G(id){ return document.getElementById(id); }
+function gel(id){ return document.getElementById(id); }
 function fmt(n){ return '₹'+(n||0).toLocaleString('en-IN'); }
 function fmtRs(n){ return 'Rs.'+(n||0).toLocaleString('en-IN'); }
 function fmtDate(v){
@@ -947,8 +947,8 @@ function ep(str){
     .replace(/\uFFFD/g,'').replace(/[ \t]{2,}/g,' ').trim();
 }
 function pickupVal(pfx){
-  const sel = G(pfx+'-pickupSel');
-  return sel.value==='__custom__' ? G(pfx+'-pickupCustom').value.trim() : sel.value;
+  const sel = gel(pfx+'-pickupSel');
+  return sel.value==='__custom__' ? gel(pfx+'-pickupCustom').value.trim() : sel.value;
 }
 
 // ── TAB SWITCH
@@ -956,12 +956,12 @@ function switchTab(tab, btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
-  G('panel-'+tab).classList.add('active');
+  gel('panel-'+tab).classList.add('active');
 }
 
 // ── PICKUP DROPDOWN
 function handlePickup(pfx, sel){
-  const inp = G(pfx+'-pickupCustom');
+  const inp = gel(pfx+'-pickupCustom');
   if(sel.value==='__custom__'){ inp.style.display='block'; inp.value=''; inp.focus(); }
   else { inp.style.display='none'; inp.value=sel.value; }
   updatePrev(pfx);
@@ -975,15 +975,15 @@ function toggleChip(el, key){
 }
 function getChips(pfx, type){
   const set = chipSets[pfx+'-'+type] || new Set();
-  const ta  = G(pfx+'-custom'+type.charAt(0).toUpperCase()+type.slice(1));
+  const ta  = gel(pfx+'-custom'+type.charAt(0).toUpperCase()+type.slice(1));
   const extra = ta ? ta.value.trim().split('\n').filter(l=>l.trim()) : [];
   return [...set, ...extra];
 }
 
 // ── DURATION
 function calcDuration(pfx){
-  const s = G(pfx+'-travelStart').value, e = G(pfx+'-travelEnd').value;
-  const el = G(pfx+'-duration');
+  const s = gel(pfx+'-travelStart').value, e = gel(pfx+'-travelEnd').value;
+  const el = gel(pfx+'-duration');
   if(s && e){
     const d = Math.round((new Date(e)-new Date(s))/86400000);
     el.value = d>0 ? `${d}N / ${d+1}D` : 'Check dates';
@@ -992,12 +992,12 @@ function calcDuration(pfx){
 
 // ── COST CALC
 function calcCost(pfx){
-  const total   = parseFloat(G(pfx+'-totalCost')?.value)||0;
-  const advance = parseFloat(G(pfx+'-advancePaid')?.value)||0;
-  const balEl   = G(pfx+'-balanceDue');
+  const total   = parseFloat(gel(pfx+'-totalCost')?.value)||0;
+  const advance = parseFloat(gel(pfx+'-advancePaid')?.value)||0;
+  const balEl   = gel(pfx+'-balanceDue');
   if(balEl && !balEl.dataset.manual) balEl.value = total>0 ? Math.max(0,total-advance) : '';
-  const adults  = parseInt(G(pfx+'-numAdults')?.value)||0;
-  G(pfx+'-perHead').textContent = adults>0&&total>0 ? fmt(Math.round(total/adults)) : '—';
+  const adults  = parseInt(gel(pfx+'-numAdults')?.value)||0;
+  gel(pfx+'-perHead').textContent = adults>0&&total>0 ? fmt(Math.round(total/adults)) : '—';
   updatePrev(pfx);
 }
 
@@ -1005,22 +1005,22 @@ function calcCost(pfx){
 function updatePrev(pfx){
   const isInv = pfx==='inv';
   const noField = isInv ? 'inv-invoiceNo' : 'rec-receiptNo';
-  G(pfx+'-pv-ref').textContent    = G(noField)?.value||'—';
-  G(pfx+'-pv-client').textContent = G(pfx+'-clientName')?.value||'Client Name';
-  G(pfx+'-pv-trip').textContent   = G(pfx+'-tripName')?.value||'—';
-  const s=G(pfx+'-travelStart')?.value, e=G(pfx+'-travelEnd')?.value;
-  G(pfx+'-pv-dates').textContent  = s&&e ? `${fmtDate(s)} — ${fmtDate(e)}` : '—';
-  G(pfx+'-pv-dur').textContent    = G(pfx+'-duration')?.value||'—';
-  G(pfx+'-pv-pax').textContent    = `${G(pfx+'-numAdults')?.value||0}A / ${G(pfx+'-numChildren')?.value||0}C`;
-  if(isInv) G('inv-pv-dest').textContent = G('inv-destinations')?.value||'—';
-  const total  = parseFloat(G(pfx+'-totalCost')?.value)||0;
-  const adv    = parseFloat(G(pfx+'-advancePaid')?.value)||0;
-  const bal    = parseFloat(G(pfx+'-balanceDue')?.value)||Math.max(0,total-adv);
-  if(isInv){ G('inv-pv-total').textContent=fmt(total); G('inv-pv-adv').textContent=fmt(adv); G('inv-pv-bal').textContent=fmt(bal); }
-  else { G('rec-pv-adv').textContent=fmt(adv); G('rec-pv-total').textContent=fmt(total); G('rec-pv-bal').textContent=fmt(bal); }
+  gel(pfx+'-pv-ref').textContent    = gel(noField)?.value||'—';
+  gel(pfx+'-pv-client').textContent = gel(pfx+'-clientName')?.value||'Client Name';
+  gel(pfx+'-pv-trip').textContent   = gel(pfx+'-tripName')?.value||'—';
+  const s=gel(pfx+'-travelStart')?.value, e=gel(pfx+'-travelEnd')?.value;
+  gel(pfx+'-pv-dates').textContent  = s&&e ? `${fmtDate(s)} — ${fmtDate(e)}` : '—';
+  gel(pfx+'-pv-dur').textContent    = gel(pfx+'-duration')?.value||'—';
+  gel(pfx+'-pv-pax').textContent    = `${gel(pfx+'-numAdults')?.value||0}A / ${gel(pfx+'-numChildren')?.value||0}C`;
+  if(isInv) gel('inv-pv-dest').textContent = gel('inv-destinations')?.value||'—';
+  const total  = parseFloat(gel(pfx+'-totalCost')?.value)||0;
+  const adv    = parseFloat(gel(pfx+'-advancePaid')?.value)||0;
+  const bal    = parseFloat(gel(pfx+'-balanceDue')?.value)||Math.max(0,total-adv);
+  if(isInv){ gel('inv-pv-total').textContent=fmt(total); gel('inv-pv-adv').textContent=fmt(adv); gel('inv-pv-bal').textContent=fmt(bal); }
+  else { gel('rec-pv-adv').textContent=fmt(adv); gel('rec-pv-total').textContent=fmt(total); gel('rec-pv-bal').textContent=fmt(bal); }
   // Preview days
   const days = getDays(pfx);
-  const pvD  = G(pfx+'-pv-days');
+  const pvD  = gel(pfx+'-pv-days');
   pvD.innerHTML='';
   if(!days.length) return;
   const hdr=document.createElement('div');
@@ -1038,11 +1038,11 @@ function updatePrev(pfx){
 
 // ── PARSE ITINERARY
 function parseItin(pfx){
-  const raw = G(pfx+'-itin-raw').value.trim();
+  const raw = gel(pfx+'-itin-raw').value.trim();
   if(!raw){ showToast('Please paste your itinerary text first'); return; }
 
-  const startVal = G(pfx+'-travelStart').value;
-  const endVal   = G(pfx+'-travelEnd').value;
+  const startVal = gel(pfx+'-travelStart').value;
+  const endVal   = gel(pfx+'-travelEnd').value;
 
   // Build array of actual dates for the trip (if dates provided)
   function tripDates(startStr, endStr){
@@ -1165,7 +1165,7 @@ function parseItin(pfx){
   }
 
   // ── BUILD day cards
-  G(pfx+'-dayList').innerHTML = '';
+  gel(pfx+'-dayList').innerHTML = '';
   dayCnt[pfx] = 0;
 
   chunks.forEach((chunk, idx) => {
@@ -1217,7 +1217,7 @@ function addDay(pfx, label, desc){
         </div>
       </div>
     </div>`;
-  G(pfx+'-dayList').appendChild(el);
+  gel(pfx+'-dayList').appendChild(el);
   updatePrev(pfx);
 }
 
@@ -1228,20 +1228,20 @@ function toggleDChip(el){
 }
 
 function removeDay(pfx, id){
-  G(id)?.remove(); delete dayIE[id];
-  G(pfx+'-dayList').querySelectorAll('.day-item').forEach((item,i)=>{ item.querySelector('.day-num-badge').textContent=`DAY ${i+1}`; });
+  gel(id)?.remove(); delete dayIE[id];
+  gel(pfx+'-dayList').querySelectorAll('.day-item').forEach((item,i)=>{ item.querySelector('.day-num-badge').textContent=`DAY ${i+1}`; });
   updatePrev(pfx);
 }
 
 function getDays(pfx){
-  return Array.from(G(pfx+'-dayList').querySelectorAll('.day-item')).map((item,i)=>{
+  return Array.from(gel(pfx+'-dayList').querySelectorAll('.day-item')).map((item,i)=>{
     const id=item.id;
     return {
       n:i+1,
       label:item.querySelector('.day-label-input').value.trim(),
       desc: item.querySelector('.day-desc').value.trim(),
-      incl: [...(dayIE[id]?.incl||new Set()), ...(G(id+'-ic')?.value||'').split('\n').filter(l=>l.trim())],
-      excl: [...(dayIE[id]?.excl||new Set()), ...(G(id+'-ec')?.value||'').split('\n').filter(l=>l.trim())],
+      incl: [...(dayIE[id]?.incl||new Set()), ...(gel(id+'-ic')?.value||'').split('\n').filter(l=>l.trim())],
+      excl: [...(dayIE[id]?.excl||new Set()), ...(gel(id+'-ec')?.value||'').split('\n').filter(l=>l.trim())],
     };
   });
 }
@@ -1286,61 +1286,151 @@ function pdfCheckY(ctx, n){
 
 function pdfItinerary(ctx, days){
   if(!days.length) return;
-  const {doc,W,M,G,GDK,RED,TEXT,MUTED,WHITE,CREAM} = ctx;
-  pdfSectionHead(ctx,'ITINERARY');
-  const ITX=M+26, ITW=W-M*2-28, BLH=5.1, ILH=4.5;
+  const {doc,W,M,GDK,RED,TEXT,MUTED,WHITE,CREAM} = ctx;
+  pdfSectionHead(ctx,'DAY-BY-DAY ITINERARY');
+
+  const ITX=M+26, ITW=W-M*2-28, BLH=5.2, ILH=4.6, SMLH=4.4;
 
   days.forEach((day,i)=>{
-    const rlabel = ep(day.label), rdesc = ep(day.desc);
-    const cleanI = day.incl.map(ep).filter(Boolean);
-    const cleanE = day.excl.map(ep).filter(Boolean);
-    const showL  = !!(rlabel.trim()); // always show label (contains date + title)
-    const paras  = rdesc ? rdesc.split(/\n+/).filter(s=>s.trim()) : [];
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.8);
-    const pGroups = paras.map(p=>doc.splitTextToSize(p.trim(),ITW));
-    const totalLines = pGroups.reduce((a,g)=>a+g.length,0);
-    const pGap = pGroups.length>1?(pGroups.length-1)*1.5:0;
-    const iStr = cleanI.length?'Included: '+cleanI.join(', '):'';
-    const eStr = cleanE.length?'Excluded: '+cleanE.join(', '):'';
-    doc.setFontSize(7.5);
-    const iL = iStr?doc.splitTextToSize(iStr,ITW):[];
-    const eL = eStr?doc.splitTextToSize(eStr,ITW):[];
-    const bH = 6+(showL?BLH*2+3:0)+totalLines*BLH+pGap+(iL.length?iL.length*ILH+4:0)+(eL.length?eL.length*ILH+3:0)+6;
+    const rawLabel = ep(day.label);
+    const rawDesc  = ep(day.desc);
+    const cleanI   = day.incl.map(ep).filter(Boolean);
+    const cleanE   = day.excl.map(ep).filter(Boolean);
 
-    pdfCheckY(ctx,bH+2);
+    // Split label: "Monday, 14 Jul 2025 | Title of the day"
+    const pipeParts = rawLabel.split(' | ');
+    const datePart  = pipeParts.length > 1 ? pipeParts[0].trim() : '';
+    const titlePart = pipeParts.length > 1 ? pipeParts.slice(1).join(' | ').trim() : rawLabel.trim();
+    const isGenericTitle = /^day\s*\d+$/i.test(titlePart);
+    const showTitle = titlePart && !isGenericTitle;
 
-    if(i%2===0){ doc.setFillColor(248,247,244); doc.roundedRect(M,ctx.y-1,W-M*2,bH+2,1.5,1.5,'F'); }
-    const bx=M+2, by=ctx.y+2;
-    doc.setFillColor(...G); doc.roundedRect(bx,by,18,18,2,2,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(5); doc.setTextColor(...WHITE);
-    doc.text('DAY',bx+9,by+5.5,{align:'center'});
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...WHITE);
-    doc.text(String(day.n),bx+9,by+14,{align:'center'});
-
-    let ty=ctx.y+5;
-    if(showL){
-      // Split "Monday, 15 Jan 2026 | Title" into date part and title part
-      const pipeParts = rlabel.split(' | ');
-      const datePart  = pipeParts.length > 1 ? pipeParts[0].trim() : '';
-      const titlePart = pipeParts.length > 1 ? pipeParts.slice(1).join(' | ').trim() : rlabel;
-      if(datePart){
-        doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
-        doc.text(datePart, ITX, ty); ty += 5;
-      }
-      if(titlePart){
-        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...GDK);
-        const ll=doc.splitTextToSize(titlePart,ITW); doc.text(ll,ITX,ty); ty+=ll.length*BLH+1.5;
-      }
+    // Parse description: split into segments by common separators (|, /, newlines)
+    // Each segment = one activity/stop, displayed as bullet
+    let segments = [];
+    if(rawDesc){
+      // Split on newlines first, then on | or >> or ->
+      const lines = rawDesc.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+      lines.forEach(line => {
+        // further split on " | " or " / " or " >> " used as separators between stops
+        const subparts = line.split(/\s*(?:\|{1,2}|\/\/|>>|->|–|—)\s*/).map(s=>s.trim()).filter(Boolean);
+        subparts.forEach(s => segments.push(s));
+      });
     }
-    if(pGroups.length){ doc.setFont('helvetica','normal'); doc.setFontSize(8.8); doc.setTextColor(...TEXT); pGroups.forEach((lg,pi)=>{ doc.text(lg,ITX,ty); ty+=lg.length*BLH; if(pi<pGroups.length-1) ty+=1.5; }); ty+=3; }
-    if(iL.length){ doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...G); doc.text(iL[0],ITX,ty); if(iL.length>1){doc.setFont('helvetica','normal'); for(let li=1;li<iL.length;li++){ty+=ILH;doc.text(iL[li],ITX,ty);}} ty+=ILH+1; }
-    if(eL.length){ doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...RED); doc.text(eL[0],ITX,ty); if(eL.length>1){doc.setFont('helvetica','normal');doc.setTextColor(...RED);for(let li=1;li<eL.length;li++){ty+=ILH;doc.text(eL[li],ITX,ty);}} }
 
-    ctx.y+=bH+2;
-    if(i<days.length-1){ doc.setDrawColor(218,213,205); doc.setLineWidth(.2); doc.line(M+22,ctx.y,W-M,ctx.y); }
+    // Build inclusion / exclusion strings
+    const inclStr = cleanI.length ? cleanI.join('  •  ') : '';
+    const exclStr = cleanE.length ? cleanE.join('  •  ') : '';
+
+    // Pre-calculate heights
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    // segment lines
+    const segLines = segments.map(s => {
+      const ls = doc.splitTextToSize(s, ITW - 6);
+      return { text:s, ls };
+    });
+    const totalSegH = segLines.reduce((a,sl) => a + sl.ls.length*BLH + 1.2, 0);
+
+    doc.setFontSize(7.2);
+    const iLines = inclStr ? doc.splitTextToSize(inclStr, ITW) : [];
+    const eLines = exclStr ? doc.splitTextToSize(exclStr, ITW) : [];
+
+    const bH = 8
+      + (datePart ? 5 : 0)
+      + (showTitle ? BLH + 2 : 0)
+      + (segments.length ? totalSegH + 4 : 0)
+      + (iLines.length ? iLines.length * ILH + 6 : 0)
+      + (eLines.length ? eLines.length * ILH + 4 : 0)
+      + 5;
+
+    pdfCheckY(ctx, bH + 3);
+
+    // Row background — alternating
+    const rowBg = i % 2 === 0 ? [252,251,248] : [248,250,253];
+    doc.setFillColor(...rowBg);
+    doc.roundedRect(M, ctx.y - 1, W-M*2, bH + 3, 1.5, 1.5, 'F');
+
+    // Left accent bar
+    const accentColor = i % 2 === 0 ? [45,106,79] : [38,92,68];
+    doc.setFillColor(...accentColor); doc.rect(M, ctx.y-1, 3, bH+3, 'F');
+
+    // Day badge (rounded square)
+    const bx = M + 5, by = ctx.y + 3;
+    doc.setFillColor(...accentColor);
+    doc.roundedRect(bx, by, 18, 18, 4, 4, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(...WHITE);
+    doc.text('DAY', bx+8, by+5.5, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...WHITE);
+    doc.text(String(day.n), bx+8, by+14, {align:'center'});
+
+    let ty = ctx.y + 5;
+
+    // Date line (e.g. "Monday, 14 Jul 2025")
+    if(datePart){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(130,140,130);
+      doc.text(datePart, ITX, ty);
+      ty += 5;
+    }
+
+    // Day title (bold, green)
+    if(showTitle){
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...accentColor);
+      const tLines = doc.splitTextToSize(titlePart, ITW);
+      doc.text(tLines, ITX, ty);
+      ty += tLines.length * BLH + 2;
+    }
+
+    // Divider line under title
+    if(datePart || showTitle){
+      doc.setDrawColor(200, 220, 205); doc.setLineWidth(0.25);
+      doc.line(ITX, ty, M+W-M*2-2, ty);
+      ty += 3.5;
+    }
+
+    // Activity segments as neat bullet points
+    segLines.forEach((sl, si) => {
+      // Draw small square bullet
+      doc.setFillColor(...accentColor);
+      doc.rect(ITX, ty - 2.2, 1.8, 1.8, 'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
+      doc.text(sl.ls, ITX + 4, ty);
+      ty += sl.ls.length * BLH + 1.2;
+    });
+
+    if(segments.length) ty += 3;
+
+    // Inclusion chips row
+    if(iLines.length){
+      doc.setFillColor(230, 247, 238);
+      doc.roundedRect(ITX, ty-1, W-M*2-26, iLines.length*ILH+5, 2, 2, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(30,100,60);
+      doc.text('INCLUDED:', ITX+3, ty+3);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.2); doc.setTextColor(30,80,50);
+      doc.text(iLines, ITX+22, ty+3);
+      ty += iLines.length * ILH + 7;
+    }
+
+    // Exclusion chips row
+    if(eLines.length){
+      doc.setFillColor(255, 243, 243);
+      doc.roundedRect(ITX, ty-1, W-M*2-26, eLines.length*ILH+5, 2, 2, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(160,40,40);
+      doc.text('EXCLUDED:', ITX+3, ty+3);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.2); doc.setTextColor(140,40,40);
+      doc.text(eLines, ITX+23, ty+3);
+      ty += eLines.length * ILH + 5;
+    }
+
+    ctx.y += bH + 3;
+
+    // Subtle separator between days
+    if(i < days.length-1){
+      doc.setDrawColor(210,225,215); doc.setLineWidth(0.15);
+      doc.line(M+20, ctx.y, W-M, ctx.y);
+    }
   });
-  ctx.y+=8;
+  ctx.y += 6;
 }
+
 
 function pdfIE(ctx, gIncl, gExcl){
   if(!gIncl.length && !gExcl.length) return;
@@ -1444,32 +1534,32 @@ function generateInvoicePDF(){
 
   const pfx='inv';
   const d={
-    clientName:  G('inv-clientName').value.trim()||'Valued Client',
-    clientPhone: G('inv-clientPhone').value.trim(),
-    clientEmail: G('inv-clientEmail').value.trim(),
-    clientCity:  G('inv-clientCity').value.trim(),
-    invoiceNo:   G('inv-invoiceNo').value.trim()||'SOTG-INV-001',
-    invoiceDate: G('inv-invoiceDate').value,
-    tripName:    G('inv-tripName').value.trim()||'Himalayan Journey',
-    travelStart: G('inv-travelStart').value,
-    travelEnd:   G('inv-travelEnd').value,
-    duration:    G('inv-duration').value,
-    numAdults:   parseInt(G('inv-numAdults').value)||0,
-    numChildren: parseInt(G('inv-numChildren').value)||0,
-    numRooms:    parseInt(G('inv-numRooms').value)||1,
-    accomType:   G('inv-accomType').value,
-    transport:   G('inv-transport').value,
-    destinations:G('inv-destinations').value.trim(),
+    clientName:  gel('inv-clientName').value.trim()||'Valued Client',
+    clientPhone: gel('inv-clientPhone').value.trim(),
+    clientEmail: gel('inv-clientEmail').value.trim(),
+    clientCity:  gel('inv-clientCity').value.trim(),
+    invoiceNo:   gel('inv-invoiceNo').value.trim()||'SOTG-INV-001',
+    invoiceDate: gel('inv-invoiceDate').value,
+    tripName:    gel('inv-tripName').value.trim()||'Himalayan Journey',
+    travelStart: gel('inv-travelStart').value,
+    travelEnd:   gel('inv-travelEnd').value,
+    duration:    gel('inv-duration').value,
+    numAdults:   parseInt(gel('inv-numAdults').value)||0,
+    numChildren: parseInt(gel('inv-numChildren').value)||0,
+    numRooms:    parseInt(gel('inv-numRooms').value)||1,
+    accomType:   gel('inv-accomType').value,
+    transport:   gel('inv-transport').value,
+    destinations:gel('inv-destinations').value.trim(),
     pickupDrop:  pickupVal('inv'),
-    totalCost:   parseFloat(G('inv-totalCost').value)||0,
-    advancePaid: parseFloat(G('inv-advancePaid').value)||0,
-    balanceDue:  parseFloat(G('inv-balanceDue').value)||0,
-    advanceDate: G('inv-advanceDate').value,
-    balancePaid: G('inv-balancePaidDate').value,
-    payMethod:   G('inv-payMethod').value,
-    cancelPolicy:G('inv-cancelPolicy').value.trim(),
-    specialNotes:G('inv-specialNotes').value.trim(),
-    personalMsg: G('inv-personalMsg').value.trim(),
+    totalCost:   parseFloat(gel('inv-totalCost').value)||0,
+    advancePaid: parseFloat(gel('inv-advancePaid').value)||0,
+    balanceDue:  parseFloat(gel('inv-balanceDue').value)||0,
+    advanceDate: gel('inv-advanceDate').value,
+    balancePaid: gel('inv-balancePaidDate').value,
+    payMethod:   gel('inv-payMethod').value,
+    cancelPolicy:gel('inv-cancelPolicy').value.trim(),
+    specialNotes:gel('inv-specialNotes').value.trim(),
+    personalMsg: gel('inv-personalMsg').value.trim(),
   };
   const days=getDays(pfx), gIncl=getChips(pfx,'incl'), gExcl=getChips(pfx,'excl');
   const perHead=d.numAdults>0&&d.totalCost>0?Math.round(d.totalCost/d.numAdults):0;
@@ -1589,30 +1679,30 @@ function generateReceiptPDF(){
 
   const pfx='rec';
   const d={
-    clientName:  G('rec-clientName').value.trim()||'Valued Client',
-    clientPhone: G('rec-clientPhone').value.trim(),
-    clientEmail: G('rec-clientEmail').value.trim(),
-    clientCity:  G('rec-clientCity').value.trim(),
-    receiptNo:   G('rec-receiptNo').value.trim()||'SOTG-REC-001',
-    receiptDate: G('rec-receiptDate').value,
-    tripName:    G('rec-tripName').value.trim()||'Himalayan Package',
-    travelStart: G('rec-travelStart').value,
-    travelEnd:   G('rec-travelEnd').value,
-    duration:    G('rec-duration').value,
-    numAdults:   parseInt(G('rec-numAdults').value)||0,
-    numChildren: parseInt(G('rec-numChildren').value)||0,
-    numRooms:    parseInt(G('rec-numRooms').value)||1,
-    destinations:G('rec-destinations').value.trim(),
+    clientName:  gel('rec-clientName').value.trim()||'Valued Client',
+    clientPhone: gel('rec-clientPhone').value.trim(),
+    clientEmail: gel('rec-clientEmail').value.trim(),
+    clientCity:  gel('rec-clientCity').value.trim(),
+    receiptNo:   gel('rec-receiptNo').value.trim()||'SOTG-REC-001',
+    receiptDate: gel('rec-receiptDate').value,
+    tripName:    gel('rec-tripName').value.trim()||'Himalayan Package',
+    travelStart: gel('rec-travelStart').value,
+    travelEnd:   gel('rec-travelEnd').value,
+    duration:    gel('rec-duration').value,
+    numAdults:   parseInt(gel('rec-numAdults').value)||0,
+    numChildren: parseInt(gel('rec-numChildren').value)||0,
+    numRooms:    parseInt(gel('rec-numRooms').value)||1,
+    destinations:gel('rec-destinations').value.trim(),
     pickupDrop:  pickupVal('rec'),
-    totalCost:   parseFloat(G('rec-totalCost').value)||0,
-    advancePaid: parseFloat(G('rec-advancePaid').value)||0,
-    balanceDue:  parseFloat(G('rec-balanceDue').value)||0,
-    advanceDate: G('rec-advanceDate').value,
-    dueDate:     G('rec-dueDate').value,
-    payMethod:   G('rec-payMethod').value,
-    cancelPolicy:G('rec-cancelPolicy').value.trim(),
-    specialNotes:G('rec-specialNotes').value.trim(),
-    personalMsg: G('rec-personalMsg').value.trim(),
+    totalCost:   parseFloat(gel('rec-totalCost').value)||0,
+    advancePaid: parseFloat(gel('rec-advancePaid').value)||0,
+    balanceDue:  parseFloat(gel('rec-balanceDue').value)||0,
+    advanceDate: gel('rec-advanceDate').value,
+    dueDate:     gel('rec-dueDate').value,
+    payMethod:   gel('rec-payMethod').value,
+    cancelPolicy:gel('rec-cancelPolicy').value.trim(),
+    specialNotes:gel('rec-specialNotes').value.trim(),
+    personalMsg: gel('rec-personalMsg').value.trim(),
   };
   const days=getDays(pfx), gIncl=getChips(pfx,'incl'), gExcl=getChips(pfx,'excl');
   const perHead=d.numAdults>0&&d.totalCost>0?Math.round(d.totalCost/d.numAdults):0;
@@ -1704,7 +1794,7 @@ function generateReceiptPDF(){
 
 // ── TOAST
 function showToast(msg){
-  const t=G('toast'); t.textContent=msg; t.classList.add('show');
+  const t=gel('toast'); t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3500);
 }
 </script>
