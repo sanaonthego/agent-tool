@@ -670,6 +670,7 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,san
             <span class="qchip" onclick="toggleChip(this,'inv-excl')">Porter / Trekking Gear</span>
             <span class="qchip" onclick="toggleChip(this,'inv-excl')">Optional Activities</span>
             <span class="qchip" onclick="toggleChip(this,'inv-excl')">Any cost due to Natural Calamity</span>
+            <span class="qchip" onclick="toggleChip(this,'inv-excl')">Anything not mentioned in Itinerary</span>
           </div>
           <div class="form-group"><label>Additional Exclusions (one per line)</label><textarea id="inv-customExcl" placeholder="One per line"></textarea></div>
         </div>
@@ -677,10 +678,9 @@ body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,san
       <div class="card">
         <div class="card-head"><span>📜</span><h3>Policies & Notes</h3></div>
         <div class="card-body">
-          <div class="form-row single"><div class="form-group"><label>Cancellation Policy</label><textarea id="inv-cancelPolicy" style="min-height:90px">15+ days before travel: Full refund
-7-14 days before travel: 50% refund
-Under 7 days: No refund
-Force majeure / natural disaster: Full credit note valid for 12 months</textarea></div></div>
+          <div class="form-row single"><div class="form-group"><label>Cancellation Policy</label><textarea id="inv-cancelPolicy" style="min-height:90px">*The 30% advance you have paid is non-refundable. However, if you inform us at least 30 days before the trip start date, the amount can be adjusted toward a future trip, provided the new trip takes place within 2 months.
+*If the trip is cancelled within 30 days of the start date, no adjustments or refunds will be provided.
+*By Paying advance & book the tour, you abide by the above terms & conditions.</textarea></div></div>
           <div class="form-row single"><div class="form-group"><label>Terms & Conditions / Special Notes</label><textarea id="inv-specialNotes" style="min-height:140px">* It is mandatory for all adults to carry original ID proof (Voter / Driving License / Passport / other Govt of India ID proof). For below 18, Birth certificate along with guardian's identity proof.
 * Also, carry passport size photo & photocopy of above documents for hotel / homestay check-in and permit (if required).
 * We will not be responsible, if any tourist breaks laws and orders.
@@ -804,7 +804,7 @@ Force majeure / natural disaster: Full credit note valid for 12 months</textarea
           <div class="perhead-row"><span class="lbl">Per Head Cost (adults)</span><span class="val" id="rec-perHead">—</span></div>
           <div class="form-row triple">
             <div class="form-group"><label>Advance Received On</label><input type="date" id="rec-advanceDate"></div>
-            <div class="form-group"><label>Balance Due By</label><input type="date" id="rec-dueDate"><span class="form-hint">Usually 7 days before travel</span></div>
+            <div class="form-group"><label>Balance to be Paid On</label><input type="date" id="rec-dueDate"><span class="form-hint">Date by which balance must be paid</span></div>
             <div class="form-group"><label>Payment Method</label>
               <select id="rec-payMethod"><option>UPI / GPay</option><option>Bank Transfer</option><option>Cash</option><option>PhonePe</option><option>Cheque</option></select>
             </div>
@@ -841,6 +841,8 @@ Force majeure / natural disaster: Full credit note valid for 12 months</textarea
             <span class="qchip" onclick="toggleChip(this,'rec-excl')">Snow Vehicle Charges</span>
             <span class="qchip" onclick="toggleChip(this,'rec-excl')">Porter / Trekking Gear</span>
             <span class="qchip" onclick="toggleChip(this,'rec-excl')">Optional Activities</span>
+            <span class="qchip" onclick="toggleChip(this,'rec-excl')">Any cost due to Natural Calamity</span>
+            <span class="qchip" onclick="toggleChip(this,'rec-excl')">Anything not mentioned in Itinerary</span>
           </div>
           <div class="form-group"><label>Additional Exclusions (one per line)</label><textarea id="rec-customExcl" placeholder="One per line"></textarea></div>
         </div>
@@ -848,10 +850,9 @@ Force majeure / natural disaster: Full credit note valid for 12 months</textarea
       <div class="card">
         <div class="card-head"><span>📜</span><h3>Policies & Notes</h3></div>
         <div class="card-body">
-          <div class="form-row single"><div class="form-group"><label>Cancellation Policy</label><textarea id="rec-cancelPolicy" style="min-height:80px">15+ days before travel: Full refund
-7-14 days before travel: 50% refund
-Under 7 days: No refund
-Force majeure: Full credit note valid for 12 months</textarea></div></div>
+          <div class="form-row single"><div class="form-group"><label>Cancellation Policy</label><textarea id="rec-cancelPolicy" style="min-height:80px">*The 30% advance you have paid is non-refundable. However, if you inform us at least 30 days before the trip start date, the amount can be adjusted toward a future trip, provided the new trip takes place within 2 months.
+*If the trip is cancelled within 30 days of the start date, no adjustments or refunds will be provided.
+*By Paying advance & book the tour, you abide by the above terms & conditions.</textarea></div></div>
           <div class="form-row single"><div class="form-group"><label>Important Notes</label><textarea id="rec-specialNotes" style="min-height:140px">* It is mandatory for all adults to carry original ID proof (Voter / Driving License / Passport / other Govt of India ID proof). For below 18, Birth certificate along with guardian's identity proof.
 * Also, carry passport size photo & photocopy of above documents for hotel / homestay check-in and permit (if required).
 * We will not be responsible, if any tourist breaks laws and orders.
@@ -1450,36 +1451,70 @@ function pdfIE(ctx, gIncl, gExcl){
 
 function pdfClientTrip(ctx, client, tripRows, leftTitle, rightTitle){
   const {doc,W,M,GDK,CREAM,TEXT,MUTED,WHITE} = ctx;
-  const LBLW=32, RX=W/2+3, VW=W/2-M-LBLW-6;
-  let tH=14;
-  const cache=tripRows.map(([lbl,val])=>{ doc.setFont('helvetica','normal'); doc.setFontSize(7.5); const ls=doc.splitTextToSize(val,VW); const h=Math.max(ls.length*4.8,6)+2.5; tH+=h; return {lbl,ls,h}; });
-  tH=Math.max(tH+6,52);
 
-  doc.setFillColor(...CREAM); doc.roundedRect(M,ctx.y,RX-M-4,tH,2.5,2.5,'F');
-  doc.setFillColor(...GDK);   doc.roundedRect(M,ctx.y,RX-M-4,9,2.5,2.5,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
-  doc.text(leftTitle,M+5,ctx.y+6);
-  const cnL=doc.splitTextToSize(client.name,RX-M-4-10);
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...GDK);
-  doc.text(cnL,M+5,ctx.y+17);
-  let cy=ctx.y+17+cnL.length*6;
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(...MUTED);
-  if(client.phone){doc.text(client.phone,M+5,cy);cy+=5.5;}
-  if(client.email){doc.text(client.email,M+5,cy);cy+=5.5;}
-  if(client.city) {doc.text(client.city, M+5,cy);}
+  // ── LEFT BLOCK: Client info (left half)
+  const RX   = W/2 + 3;
+  const LW   = RX - M - 4;   // left block width
 
-  doc.setFillColor(...CREAM); doc.roundedRect(RX,ctx.y,W-RX-M,tH,2.5,2.5,'F');
-  doc.setFillColor(...GDK);   doc.roundedRect(RX,ctx.y,W-RX-M,9,2.5,2.5,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
-  doc.text(rightTitle,RX+5,ctx.y+6);
-  let ry=ctx.y+15;
-  cache.forEach(({lbl,ls,h})=>{
-    doc.setFont('helvetica','bold');  doc.setFontSize(6.5); doc.setTextColor(...MUTED); doc.text(lbl,RX+4,ry);
-    doc.setFont('helvetica','normal');doc.setFontSize(7.8); doc.setTextColor(...TEXT);  doc.text(ls,RX+5+LBLW,ry);
-    ry+=h;
+  // Build client lines
+  const cnL = doc.splitTextToSize(client.name, LW - 10);
+  let clientH = 10 + cnL.length * 6;
+  if(client.phone) clientH += 5.5;
+  if(client.email) clientH += 5.5;
+  if(client.city)  clientH += 5.5;
+  const leftH = Math.max(clientH + 8, 36);
+
+  // ── RIGHT BLOCK: Trip details (right half)
+  const RW   = W - RX - M;      // right block width = 87mm
+  const LBLW = 28;               // label column = 28mm
+  const VW   = RW - LBLW - 10;  // value column = 87-28-10 = 49mm — enough for wrapping
+
+  let rightH = 12;
+  const cache = tripRows.map(([lbl, val]) => {
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    const ls = doc.splitTextToSize(String(val), VW);
+    const h  = Math.max(ls.length * 5.0, 6) + 3;
+    rightH += h;
+    return { lbl, ls, h };
   });
-  ctx.y+=tH+14;
+  const rightHFinal = Math.max(rightH + 4, leftH);
+  const blockH = Math.max(leftH, rightHFinal);
+
+  pdfCheckY(ctx, blockH + 16);
+
+  // Draw left block
+  doc.setFillColor(...CREAM); doc.roundedRect(M, ctx.y, LW, blockH, 2.5, 2.5, 'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(M, ctx.y, LW, 9,      2.5, 2.5, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text(leftTitle, M+5, ctx.y + 6);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...GDK);
+  doc.text(cnL, M+5, ctx.y + 17);
+  let cy = ctx.y + 17 + cnL.length * 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(...MUTED);
+  if(client.phone){ doc.text(client.phone, M+5, cy); cy += 5.5; }
+  if(client.email){ doc.text(client.email, M+5, cy); cy += 5.5; }
+  if(client.city) { doc.text(client.city,  M+5, cy); }
+
+  // Draw right block
+  doc.setFillColor(...CREAM); doc.roundedRect(RX, ctx.y, RW, blockH, 2.5, 2.5, 'F');
+  doc.setFillColor(...GDK);   doc.roundedRect(RX, ctx.y, RW, 9,      2.5, 2.5, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WHITE);
+  doc.text(rightTitle, RX+5, ctx.y + 6);
+
+  let ry = ctx.y + 14;
+  cache.forEach(({ lbl, ls, h }) => {
+    // Label (bold, muted) — left portion of right block
+    doc.setFont('helvetica','bold');   doc.setFontSize(6.8); doc.setTextColor(...MUTED);
+    doc.text(lbl, RX + 4, ry);
+    // Value (normal, dark) — right portion, properly wrapped
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(...TEXT);
+    doc.text(ls, RX + 4 + LBLW, ry);
+    ry += h;
+  });
+
+  ctx.y += blockH + 14;
 }
+
 
 function pdfPolicy(ctx, label, text, bg){
   if(!text) return;
@@ -1773,7 +1808,7 @@ function generateReceiptPDF(){
   doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED); doc.text(d.advanceDate?fmtDate(d.advanceDate):'—',px+42,ctx.y+5.5);
   doc.setFont('helvetica','bold'); doc.setTextColor(...GDK); doc.text('via:',px+70,ctx.y+5.5);
   doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED); doc.text(d.payMethod,px+76,ctx.y+5.5);
-  if(d.dueDate){doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...RED);doc.text('Balance due by:',px,ctx.y+11);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(fmtDate(d.dueDate),px+38,ctx.y+11);}
+  if(d.dueDate){doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...RED);doc.text('Balance to be paid on:',px,ctx.y+11);doc.setFont('helvetica','normal');doc.setTextColor(...MUTED);doc.text(fmtDate(d.dueDate),px+51,ctx.y+11);}
   ctx.y+=20;
 
   pdfItinerary(ctx,days);
